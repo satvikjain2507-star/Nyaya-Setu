@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Nyaya Setu",
+    "slug": "nyaya-setu",
+    "owner": "hackpeeps",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#241528"
+    },
+    "android": {
+      "package": "com.hackpeeps.nyayasetu",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#241528"
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Nyaya Setu to use your location to find nearby help centres."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "99db725f-8987-4946-9d26-2fea618bbeb8"
+      }
+    }
+  }
+}
