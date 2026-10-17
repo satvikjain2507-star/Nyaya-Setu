@@ -24,9 +24,10 @@ const SUGGESTIONS = [
   { icon: "🌾", text: "Am I eligible for PM-KISAN? What documents do I need?" },
   { icon: "🏥", text: "How can my 72-year-old father get an Ayushman card?" },
   { icon: "🎓", text: "Scholarships for a girl student in class 11 from a poor family" },
+  { icon: "📱", text: "My phone was stolen today. How do I block it?" },
   { icon: "🚨", text: "How do I report a UPI fraud online?" },
   { icon: "📄", text: "How to file an RTI application online" },
-  { icon: "🧅", text: "Today's onion price in Lasalgaon mandi, Nashik" },
+  { icon: "🛂", text: "How do I apply for a passport?" },
 ];
 
 export default function SahayakLiveScreen() {
@@ -99,7 +100,7 @@ export default function SahayakLiveScreen() {
       setLive((prev) => ({ ...prev, status: res.mode === "agent" ? "COMPLETED" : "FALLBACK" }));
       setPhase("done");
       if (!spokeRef.current) say(res.answer);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+      setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 300);
     } catch (e) {
       finalRef.current = true;
       setError(e.message || "Something went wrong.");
@@ -200,7 +201,8 @@ export default function SahayakLiveScreen() {
                 )}
               </View>
 
-              {phase !== "planning" && (
+              {phase === "running" && (
+                <>
                 <AgentLiveView
                   streamingUrl={live.streamingUrl}
                   steps={live.steps}
@@ -209,19 +211,14 @@ export default function SahayakLiveScreen() {
                   siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
                   demo={!hasTinyFishKey()}
                 />
+                  {result && <View style={{ height: SPACING.md }} />}
+                </>
               )}
-
-              {busy && (
-                <TouchableOpacity style={styles.cancelBtn} onPress={cancel}>
-                  <Text style={styles.cancelText}>{t("stop")}</Text>
-                </TouchableOpacity>
-              )}
-
               {result && (phase === "done" || phase === "running") && (
                 <View style={styles.resultCard}>
                   <View style={styles.resultHead}>
                     <Text style={styles.resultBadge}>
-                      {phase === "running" ? `⚡ ${t("quickAnswer")}` : result.mode === "agent" ? "✅ Done live on the official website" : "✅ Read live from official pages"}
+                      {phase === "running" ? `⚡ ${t("quickAnswer")} · live browser is double-checking on ${plan?.siteName || "the official site"}…` : result.mode === "agent" ? `✅ Verified live on ${plan?.siteName || "the official website"}` : "✅ Read live from official government pages"}
                     </Text>
                     <TouchableOpacity onPress={() => say(result.answer)}>
                       <Text style={styles.speaker}>🔊</Text>
@@ -253,6 +250,25 @@ export default function SahayakLiveScreen() {
                   <SourceChips sources={result.sources} />
                   {result.demo && <Text style={styles.demo}>Demo mode — add your TinyFish key in .env for real live runs.</Text>}
                 </View>
+              )}
+
+              {phase === "done" && (
+                <View style={{ marginTop: SPACING.sm }}>
+                <AgentLiveView
+                  streamingUrl={live.streamingUrl}
+                  steps={live.steps}
+                  status={live.status}
+                  elapsedMs={live.elapsed}
+                  siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
+                  demo={!hasTinyFishKey()}
+                />
+                </View>
+              )}
+
+              {busy && (
+                <TouchableOpacity style={styles.cancelBtn} onPress={cancel}>
+                  <Text style={styles.cancelText}>{t("stop")}</Text>
+                </TouchableOpacity>
               )}
 
               {phase === "done" && (
@@ -315,7 +331,7 @@ const styles = StyleSheet.create({
   planText: { fontSize: 12.5, color: COLORS.darkGray, marginTop: 6 },
   cancelBtn: { alignSelf: "center", marginTop: SPACING.md, paddingHorizontal: SPACING.xl, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.rose },
   cancelText: { color: COLORS.rose, fontWeight: "700" },
-  resultCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg, marginTop: SPACING.md, borderWidth: 1, borderColor: COLORS.teal },
+  resultCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.teal },
   resultHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   resultBadge: { flex: 1, color: COLORS.teal, fontWeight: "800", fontSize: 12.5 },
   speaker: { fontSize: 22 },

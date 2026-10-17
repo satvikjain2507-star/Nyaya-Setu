@@ -99,13 +99,13 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
               text={
                 !running
                   ? status === "FALLBACK"
-                    ? "Answer prepared from official pages"
-                    : "Session finished ✓"
+                    ? "Answer ready from official government pages ✓"
+                    : "Done on the official website ✓"
                   : demo
                   ? "Demo mode — add your TinyFish key to watch the real browser"
                   : streamingUrl && webError
                   ? "Live view unavailable — the agent is still working"
-                  : "Launching a secure cloud browser…"
+                  : "Opening the official website in a secure cloud browser…"
               }
             />
           )}
@@ -115,12 +115,12 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
       <View style={styles.timeline}>
         <View style={styles.timelineHead}>
           <Text style={styles.timelineTitle}>What the agent is doing</Text>
-          <Text style={styles.timer}>⏱ {secs}s</Text>
+          <Text style={styles.timer}>⏱ {secs}s{running ? " · usually 40–60 s" : ""}</Text>
         </View>
         {steps.length === 0 && running && (
           <View style={styles.stepRow}>
             <ActivityIndicator size="small" color={COLORS.gold} />
-            <Text style={styles.stepText}>Opening the official website…</Text>
+            <Text style={styles.stepText}>Starting a secure cloud browser (takes ~20 s)…</Text>
           </View>
         )}
         {steps.slice(-6).map((s, i, arr) => {
