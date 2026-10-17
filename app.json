@@ -7,10 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "backgroundColor": "#241528"
-    },
     "android": {
       "package": "com.hackpeeps.nyayasetu",
       "adaptiveIcon": {
@@ -31,7 +27,23 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Nyaya Setu to use your location to find nearby help centres."
         }
-      ]
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Nyaya Setu to use the microphone so you can speak your problem in your own language."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "backgroundColor": "#241528",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {

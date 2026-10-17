@@ -1,4 +1,4 @@
-# Nyaya Setu: 3-minute judge demo (TinyFish × Gemini)
+# Nyaya Setu: 3-minute live demo (TinyFish × Gemini)
 
 **Opening line:** "Every AI chatbot answers from memory. Nyaya Setu goes to the official government website, live, and shows you it's doing it."
 

@@ -8,7 +8,8 @@ const hasKey = () => Boolean(GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_a
 
 export const hasGeminiKey = hasKey;
 
-async function callGemini(systemPrompt, parts, { json = false, maxOutputTokens = 2048, timeout = 30000 } = {}) {
+async function callGemini(systemPrompt, parts, opts = {}, attempt = 0) {
+  const { json = false, maxOutputTokens = 2048, timeout = 30000 } = opts;
   if (!hasKey()) {
     return json ? null : mockReply(systemPrompt);
   }
@@ -32,7 +33,14 @@ async function callGemini(systemPrompt, parts, { json = false, maxOutputTokens =
     if (json) return parseJsonLoose(text);
     return text || "Sorry, I couldn't generate a reply. Please try again.";
   } catch (err) {
-    console.error("Gemini error:", err?.response?.data || err.message);
+    const status = err?.response?.status;
+    // 503 = Google's servers are temporarily overloaded, 429 = rate limit: wait and retry (up to 3 tries)
+    if ([429, 500, 502, 503, 504].includes(status) && attempt < 2) {
+      await new Promise((r) => setTimeout(r, attempt === 0 ? 1500 : 4000));
+      return callGemini(systemPrompt, parts, opts, attempt + 1);
+    }
+    // warn (not error) so dev builds don't show a red toast; the app already falls back gracefully
+    console.warn("Gemini unavailable:", status, err?.response?.data?.error?.message || err.message);
     if (json) return null;
     return "Sorry, I couldn't reach the AI service right now. Please check your API key and internet connection, and try again.";
   }
@@ -71,8 +79,9 @@ export async function geminiTranscribe(audioBase64, mimeType = "audio/m4a") {
       { text: "Transcribe this audio exactly, in the language it was spoken. Reply with ONLY the transcription." },
       { inline_data: { mime_type: mimeType, data: audioBase64 } },
     ],
-    { maxOutputTokens: 512 }
+    { maxOutputTokens: 512, timeout: 60000 }
   );
+  if (!text || text.startsWith("Sorry, I couldn't")) return "";
   return text.replace(/^["']|["']$/g, "");
 }
 

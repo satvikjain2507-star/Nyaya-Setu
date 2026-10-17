@@ -71,10 +71,14 @@ async function tfRequest(url, { method = "GET", body, timeout = 20000, signal } 
       const friendly =
         res.status === 401
           ? "TinyFish API key is invalid or missing."
-          : res.status === 402 || res.status === 403
-          ? "TinyFish credits are exhausted for this account."
+          : res.status === 402
+          ? "TinyFish wallet balance is too low to start the live browser. Top up at agent.tinyfish.ai."
+          : res.status === 403
+          ? "TinyFish credits are exhausted or the plan is inactive."
+          : res.status === 429
+          ? "TinyFish is rate-limiting requests. Please wait a few seconds and try again."
           : err.message || `TinyFish request failed (HTTP ${res.status}).`;
-      throw new TinyFishError(friendly, { status: res.status, code: err.code });
+      throw new TinyFishError(friendly, { status: res.status, code: err.code, category: err.category });
     }
     return data;
   } catch (e) {
@@ -161,10 +165,13 @@ export async function startAgentRun({ url, goal, browserProfile = "lite", maxSte
   const start = (body) => tfRequest(`${AGENT_BASE}/automation/run-async`, { method: "POST", timeout: TIMEOUTS.agentStart, body });
   let data;
   try {
-    data = await start({ url, goal, browser_profile: browserProfile, agent_config: { max_steps: maxSteps } });
+    // NOTE: custom agent_config (max_steps etc.) needs TinyFish beta access — sending it
+    // returns 403 FORBIDDEN on normal accounts, so we keep the request minimal.
+    // The app itself cancels the run after maxWaitMs, so it can't run forever.
+    data = await start({ url, goal, browser_profile: browserProfile });
   } catch (e) {
     // Some accounts/plans reject optional fields — retry with only the required ones.
-    if ([400, 403, 422].includes(e.status)) data = await start({ url, goal });
+    if ([400, 403, 422].includes(e.status) && e.code !== "INSUFFICIENT_CREDITS") data = await start({ url, goal });
     else throw e;
   }
   if (!data?.run_id) throw new TinyFishError(data?.error?.message || "TinyFish did not return a run id.");
@@ -174,7 +181,7 @@ export async function startAgentRun({ url, goal, browserProfile = "lite", maxSte
 /** Get a run's current state: status, steps, streaming_url, result, error. */
 export async function getAgentRun(runId) {
   if (String(runId).startsWith("demo-")) return mockRunState(runId);
-  return tfRequest(`${AGENT_BASE}/runs/${runId}`, { timeout: TIMEOUTS.poll });
+  return tfRequest(`${AGENT_BASE}/runs/${runId}?screenshots=none&html=none`, { timeout: TIMEOUTS.poll });
 }
 
 export async function cancelAgentRun(runId) {
@@ -221,7 +228,9 @@ export async function runAgentWithLiveUpdates({ url, goal, onUpdate, shouldStop,
           status: run.status,
           result: normaliseResult(run.result),
           steps,
-          error: run.error,
+          error: run.error
+            ? { ...run.error, message: run.error.category === "BILLING_FAILURE" ? "TinyFish wallet is out of credits" : run.error.message }
+            : null,
           videoUrl: run.video_url,
         };
       }

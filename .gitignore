@@ -1,2 +1,9 @@
 .env
 node_modules/
+.env*.local
+.expo/
+dist/
+*.apk
+*.aab
+.DS_Store
+_backup_before_fix/

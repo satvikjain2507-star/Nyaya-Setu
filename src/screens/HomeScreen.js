@@ -122,7 +122,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.feedFoot}>Fetched live from the web via TinyFish Search</Text>
         </View>
 
-        <Text style={styles.footer}>Team Hackpeeps · Build With भारत 4.0</Text>
+        <Text style={styles.footer}>Team Hackpeeps · Made in India 🇮🇳</Text>
       </ScrollView>
     </SafeAreaView>
   );

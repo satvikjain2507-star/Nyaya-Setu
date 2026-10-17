@@ -1,8 +1,7 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system/legacy";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { useVoiceRecorder } from "../utils/voiceRecorder";
 import * as Speech from "expo-speech";
 import { COLORS } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
@@ -16,7 +15,7 @@ export default function TranslatorScreen() {
   const [resultText, setResultText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const recordingRef = useRef(null);
+  const voice = useVoiceRecorder();
 
   const targetSpeechLang = () => (direction === "en-hi" ? "hi-IN" : "en-IN");
 
@@ -32,10 +31,8 @@ export default function TranslatorScreen() {
   const handleMicPress = async () => {
     if (!isRecording) {
       try {
-        await Audio.requestPermissionsAsync();
-        await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-        recordingRef.current = recording;
+        const ok = await voice.start();
+        if (!ok) return Alert.alert("Microphone permission is needed for voice translation.");
         setIsRecording(true);
       } catch (err) {
         console.error("Failed to start recording:", err);
@@ -45,9 +42,8 @@ export default function TranslatorScreen() {
       setLoading(true);
       setResultText("");
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        const uri = recordingRef.current.getURI();
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        const base64 = await voice.stop();
+        if (!base64) return;
         const reply = await geminiTranslateAudio(base64, direction, "audio/m4a");
         // reply contains both "🗣️ You said:" and "➡️ Translation:" lines
         const translationLine = reply.split("➡️ Translation:")[1]?.trim() || reply;

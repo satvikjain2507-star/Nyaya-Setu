@@ -1,9 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { FlatList, StyleSheet } from "react-native";
-import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system/legacy";
+import { FlatList, StyleSheet, Alert } from "react-native";
+import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatItem, { runLiveCheckForMessage } from "../components/ChatItem";
 import { verifyLive } from "../services/liveIntel";
 import ChatInput from "../components/ChatInput";
@@ -24,7 +23,7 @@ export default function LegalCompanionScreen() {
   useFocusEffect(useCallback(() => () => stopSpeaking(), []));
   const [messages, setMessages] = useState([{ id: "intro", role: "bot", text: t("legalIntro") }]);
   const [isRecording, setIsRecording] = useState(false);
-  const recordingRef = useRef(null);
+  const voice = useVoiceRecorder();
 
   useEffect(() => {
     (async () => {
@@ -65,10 +64,8 @@ export default function LegalCompanionScreen() {
   const handleMicPress = async () => {
     if (!isRecording) {
       try {
-        await Audio.requestPermissionsAsync();
-        await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-        recordingRef.current = recording;
+        const ok = await voice.start();
+        if (!ok) return Alert.alert("Microphone permission is needed for voice messages.");
         setIsRecording(true);
       } catch (err) {
         console.error("Failed to start recording:", err);
@@ -76,9 +73,8 @@ export default function LegalCompanionScreen() {
     } else {
       setIsRecording(false);
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        const uri = recordingRef.current.getURI();
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        const base64 = await voice.stop();
+        if (!base64) return;
 
         const userMsgId = Date.now().toString();
         appendMessage({ id: userMsgId, role: "user", text: "🎤 (voice message)" });

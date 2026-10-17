@@ -1,63 +1,145 @@
-# Nyaya Setu — AI Bridge to Rights & Justice (Build With भारत 4.0)
+# Nyaya Setu (न्याय सेतु) — AI Bridge to Rights & Justice
 
-Nyaya Setu ("Justice Bridge") is a voice-first, multilingual mobile companion that helps citizens navigate government welfare schemes, legal problems, and confusing official documents — in their own language, spoken and written.
+**Speak in your language. Watch AI do it on the government website.**
 
-Built for **Build With भारत 4.0** by Team Hackpeeps.
+Nyaya Setu is a free, voice-first, multilingual Android app that helps Indian citizens discover welfare schemes, navigate legal processes and understand official documents — and then **verifies every answer live on official `.gov.in` websites**. Google **Gemini** understands the citizen; **TinyFish** browses, reads and acts on the live web for them.
 
-> ⚠️ Written and iterated on with AI pair-programming in a sandbox without internet or a live Android device — always test on your own machine before a demo.
+Built by **Team Hackpeeps**.
 
 ---
 
-## 1. What it does
+## Why it exists
 
-**Three core pillars**, all screens accessible from the Home tab or bottom navigation:
+Citizens don't lack schemes or laws — they lack a simple, trustworthy way to reach them:
 
-| Feature | Description |
-|---|---|
-| **Scheme Navigator** | Describe your situation in your own words (voice or text) — Gemini finds relevant government welfare schemes (PM-KISAN, Sukanya Samriddhi, Atal Pension Yojana, PMMVY, and more) and explains eligibility and required documents. |
-| **Legal Companion** | Step-by-step guidance for common legal situations — FIR filing, RTI requests, land disputes, family matters, cyber fraud, wage disputes. |
-| **Document Simplifier** | Photograph any official notice or document — Gemini reads it directly (no OCR library needed) and explains it in plain language, extracting key actions and deadlines. |
+- **Language wall** – India has 22 scheduled languages, but most portals and notices use only English or formal Hindi.
+- **Literacy wall** – about 1 in 4 rural adults cannot read fluently (rural literacy 77%, PLFS 2023–24).
+- **Middleman wall** – agents charge ₹200–2,000 to fill forms that are legally free.
+- **Scam wall** – cyber-fraud complaints grew from 10.3 lakh (2022) to 22.7 lakh (2024), and losses to ₹22,846 crore in 2024 (MHA / NCRP).
+- **Stale information** – rules change; people rely on unverified forwards.
 
-**Supporting features:**
+## Features (13)
 
-| Feature | Description |
-|---|---|
-| **Voice Translator** | Speak or type in any supported language, get an instant translation, spoken aloud. |
-| **Visual Solver** | General-purpose camera Q&A (like Google Lens) — photograph anything and ask a question about it. |
-| **Help Centers** | Nearby CSC centres, police stations, and Legal Services Authority offices, sorted by distance (sample data for the demo). |
-| **13 Indian languages** | English, Hindi, Marathi, Bengali, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam, Punjabi, Assamese — full UI translation, and Gemini auto-detects and replies in whichever language the user speaks or types. |
-| **Text-to-speech** | Every AI reply — from typed questions or voice notes — is spoken aloud automatically, in the correct language. Speech speed is user-adjustable (Slow / Normal / Fast / Very Fast) in Settings. |
-| **Saved chat history** | Conversations persist on-device (AsyncStorage) across app restarts. |
-
-## 1b. 🐟 TinyFish live-web layer (new)
-
-Every other AI app answers from memory. **Nyaya Setu checks the live official websites.**
-
-| Feature | TinyFish API used | What the user sees |
+| Group | Feature | What it does |
 |---|---|---|
-| **🛰️ Sahayak Live** (centre tab) | **Agent API** (`/v1/automation/run-async` + `GET /v1/runs/{id}`) | Speak a task in any language → Gemini plans it → a TinyFish cloud browser opens the official .gov.in site and does the work **live inside the app** (embedded `streaming_url` + step timeline) → verified answer read aloud. Falls back to Search + Fetch if a site blocks the agent. |
-| **✅ Verify live** (Scheme Navigator & Legal Companion) | **Search API** + **Fetch API** | One tap under any AI answer → checks official sites → badge: *Verified / Updated / Partially verified*, key facts, official link, source chips. |
-| **🛡️ Scam Shield** (Document Simplifier) | **Search API** (web + news) | "Is this notice/SMS genuine?" → checks the official source + fraud alerts → *Looks genuine / Suspicious / Likely SCAM* + what to do (1930 helpline). |
-| **📍 Real help centres** | **Search API** | GPS → city → real CSC, DLSA, police station and One Stop Centre listings with Call / Directions / Source buttons. |
-| **📰 Live updates feed** (Home) | **Search API** (`domain_type=news`, last 7 days) | Latest scheme & fraud-alert news, translated into the user's language. Cached 6 h. |
+| Core (Gemini) | **Scheme Navigator** | Describe your life in your own words (voice or text) → matching schemes, eligibility cues, documents needed. |
+| | **Legal Companion** | FIR, RTI, land, family, cyber fraud, wages → plain-language steps + free legal aid (DLSA) routing. |
+| | **Document Simplifier** | Photograph any notice → 3 simple points, actions and deadlines (Gemini Vision, no OCR). |
+| Live web (TinyFish) | **🛰️ Sahayak Live** | Speak a task → an AI cloud browser opens the official site and does it **live inside the app**, with a step timeline. |
+| | **✅ Verify Live** | One tap under any answer → cross-checked against official pages → *Verified / Updated / Partial* + sources. |
+| | **🛡️ Scam Shield** | Paste or photograph an SMS / notice → *Genuine / Suspicious / Likely SCAM* + 1930 helpline guidance. |
+| | **📍 Real Help Centres** | GPS → city → real CSC, DLSA, police and One Stop Centres with Call / Directions. |
+| | **📰 Live Updates** | This week's scheme & fraud-alert news, translated. |
+| Access for all | **13 Indian languages** | Full UI + replies in English, Hindi, Marathi, Bengali, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam, Punjabi, Assamese. |
+| | **Read aloud** | Every answer spoken, adjustable speed. |
+| | **Voice Translator** | Speak in one language, hear another. |
+| | **Visual Solver** | Photograph anything and ask about it. |
+| | **Saved history** | Conversations stay on the phone. |
 
-Code: `src/services/tinyfishApi.js` (REST client, demo-mode fallback) and `src/services/liveIntel.js` (TinyFish + Gemini orchestration). Settings → **Test TinyFish connection** checks the key.
+## Architecture
 
-### Setup
-Add to `.env` (key from https://agent.tinyfish.ai/api-keys):
+```mermaid
+flowchart LR
+  A[Citizen<br/>voice · photo · text] --> B[Gemini 3.5 Flash-Lite<br/>understand · translate · plan]
+  B --> C{Intent router}
+  C --> D[Scheme]
+  C --> E[Legal]
+  C --> F[Document]
+  C --> G[Sahayak Live]
+  D & E & F & G --> H[TinyFish live web<br/>Agent · Search · Fetch]
+  H --> I[Verified answer<br/>spoken · cited · nearest help]
 ```
-EXPO_PUBLIC_TINYFISH_API_KEY=your_key_here
+
+### Role of AI (Gemini)
+One multimodal model performs six jobs: speech understanding (13 languages, no separate STT), document vision, intent classification, browser-task planning (JSON), grounded verification against live pages, and scam classification. Structured tasks run in JSON mode at temperature 0.2, with automatic retry when the AI service is busy. **AI plans and explains; facts come from live official websites.**
+
+### TinyFish integration
+All three APIs sit behind one resilient client — `src/services/tinyfishApi.js` (REST client) and `src/services/liveIntel.js` (TinyFish + Gemini orchestration).
+
+| API | Endpoint | Powers |
+|---|---|---|
+| **Agent** | `POST /v1/automation/run-async`, `GET /v1/runs/{id}`, `POST /v1/runs/{id}/cancel` | Sahayak Live — live `streaming_url` shown in a WebView, polled every 2 s, auto-stops at 150 s, user can stop anytime |
+| **Search** | `GET api.search.tinyfish.ai` | Verify Live, Scam Shield, Help Centres, Live Updates — India-located, `.gov.in` / `.nic.in` ranked first, 7-day news window |
+| **Fetch** | `POST api.fetch.tinyfish.ai` | Verify Live & quick answers — official pages as clean markdown, cited |
+
+**Resilience:** Sahayak Live gives a quick Search + Fetch answer (~15 s) while the agent works in parallel; captcha / block detection falls back automatically; help centres are cached 24 h and news 6 h.
+
+### Safety & privacy
+- **Read-only agent** — never logs in, enters Aadhaar / OTP / bank details, pays or submits.
+- **Data stays on the phone** — history and settings in on-device storage; no user database.
+- **Official-first & cited** — sources shown so citizens can check themselves.
+- **Liability-safe legal help** — general guidance + "confirm with a lawyer or your nearest DLSA".
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| App | React Native 0.86 · React 19.2 · **Expo SDK 57** |
+| Navigation | React Navigation 7 (bottom tabs + native stack) |
+| AI | Google Gemini `gemini-3.5-flash-lite` (text, image and audio in one API) |
+| Live web | TinyFish Agent, Search & Fetch APIs · `react-native-webview` for the live view |
+| Voice | `expo-audio` (recording) · `expo-speech` (text-to-speech) |
+| Device | `expo-image-picker` (camera) · `expo-location` (GPS) · `expo-file-system` |
+| Storage | `@react-native-async-storage/async-storage` |
+| Build | EAS Build (Android APK) |
+
+## Project structure
+
 ```
-Without a key the app runs in **demo mode** with sample data, so it never breaks on stage.
+App.js / index.js          navigation + app entry
+src/screens/               Home, Scheme Navigator, Legal Companion, Document Simplifier,
+                           Sahayak Live, Help Centres, Translator, Visual Solver, Settings
+src/services/geminiApi.js  Gemini client (text, image, audio, JSON) with retry
+src/services/tinyfishApi.js TinyFish Agent / Search / Fetch client (+ demo mode)
+src/services/liveIntel.js  Verify Live, Scam Shield, Help Centres, Live Updates, Sahayak Live
+src/components/            AgentLiveView (live browser), LiveCard, chat UI
+src/utils/                 voiceRecorder, speaker, language helpers, chat storage
+src/data/                  schemes, legal scenarios, 13-language translations
+scripts/diagnose-sahayak.sh  checks Gemini + all 3 TinyFish APIs from the terminal
+```
 
-## 2. Tech stack
+## Setup
 
-- **Framework:** React Native + Expo (SDK 54)
-- **Navigation:** React Navigation (bottom tabs + native stack)
-- **AI:** Google Gemini (`gemini-3.5-flash-lite`) — multimodal text, image, and audio understanding in a single API, no separate OCR or speech-to-text pipeline
-- **Voice input:** `expo-av` (recording) → sent directly to Gemini as audio
-- **Voice output:** `expo-speech` (on-device text-to-speech, adjustable rate)
-- **Device capabilities:** camera, microphone, location
-- **Storage:** `@react-native-async-storage/async-storage` for chat history and settings persistence
-- **Live web:** TinyFish Agent, Search and Fetch APIs (`react-native-webview` for the live browser view)
-- **Build:** EAS Build (Android APK)
+**Requirements:** Node.js 20.19.4+ (or 22.13+ / 24.3+), an Android phone with **Expo Go (SDK 57)**, a [Gemini API key](https://aistudio.google.com/apikey) and a [TinyFish API key](https://agent.tinyfish.ai/api-keys).
+
+```bash
+git clone https://github.com/satvikjain2507-star/Nyaya-Setu.git
+cd Nyaya-Setu
+npm install
+cp .env.example .env      # then paste your two keys into .env
+npx expo start --clear    # scan the QR code with Expo Go (same Wi-Fi / hotspot)
+```
+
+`.env`:
+```
+EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+EXPO_PUBLIC_TINYFISH_API_KEY=your_tinyfish_api_key_here
+EXPO_PUBLIC_USE_RN_FETCH=1
+```
+Without keys the app runs in **demo mode** with sample data, so it never breaks during a presentation.
+
+**Check the APIs:** `bash scripts/diagnose-sahayak.sh` (prints only HTTP status, never your keys).
+
+## Build the Android APK
+
+```bash
+npm install -g eas-cli
+eas login
+eas build -p android --profile preview
+```
+EAS prints a download link / QR code for the `.apk` when the build finishes.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Expo Go says *incompatible SDK* | Install Expo Go for SDK 57 (press `a` in the Expo terminal with the phone connected). |
+| `failed to start tunnel` | Skip `--tunnel`; put phone and computer on the same Wi-Fi / hotspot. |
+| Gemini `503` | Google's servers are busy — the app retries automatically; try again in a minute. |
+| TinyFish `403 … custom max steps` | Custom `agent_config` needs TinyFish beta access; the app already sends only supported fields. |
+
+## Roadmap
+Pilot with CSCs, NGOs and DLSA → WhatsApp bot and IVR/SMS for feature phones → all 22 scheduled languages, iOS and consent-based form filling.
+
+---
+*Nyaya Setu provides general information and guidance only — not legal advice. Always confirm with official sources or your nearest District Legal Services Authority.*

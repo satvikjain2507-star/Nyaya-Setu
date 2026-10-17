@@ -8,8 +8,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useRef, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system/legacy";
+import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatInput from "../components/ChatInput";
 import AgentLiveView from "../components/AgentLiveView";
 import { LiveDot, SourceChips, openLink } from "../components/LiveCard";
@@ -42,7 +41,7 @@ export default function SahayakLiveScreen() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
-  const recordingRef = useRef(null);
+  const voice = useVoiceRecorder();
   const stopRef = useRef(false);
   const scrollRef = useRef(null);
 
@@ -116,11 +115,8 @@ export default function SahayakLiveScreen() {
   const handleMicPress = async () => {
     if (!isRecording) {
       try {
-        const perm = await Audio.requestPermissionsAsync();
-        if (!perm.granted) return Alert.alert("Microphone permission is needed for voice tasks.");
-        await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-        recordingRef.current = recording;
+        const ok = await voice.start();
+        if (!ok) return Alert.alert("Microphone permission is needed for voice tasks.");
         setIsRecording(true);
       } catch (err) {
         console.error("Failed to start recording:", err);
@@ -128,13 +124,17 @@ export default function SahayakLiveScreen() {
     } else {
       setIsRecording(false);
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        const uri = recordingRef.current.getURI();
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+        const base64 = await voice.stop();
+        if (!base64) return;
         setPhase("planning");
         setRequest("🎤 …");
         const text = await geminiTranscribe(base64, "audio/m4a");
         setPhase("idle");
+        if (!text?.trim()) {
+          setError("Couldn't understand the voice note (AI busy or no internet). Please try again or type your task.");
+          setPhase("error");
+          return;
+        }
         start(text);
       } catch (err) {
         console.error("Failed to process recording:", err);
