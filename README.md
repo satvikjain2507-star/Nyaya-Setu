@@ -6,6 +6,15 @@ Nyaya Setu is a free, voice-first, multilingual Android app that helps Indian ci
 
 Built by **Team Hackpeeps**.
 
+> 🎬 **Demo video:** _add your video link here_  ·  📱 **Android APK:** built with EAS (see [Build](#build-the-android-apk))
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="190" alt="Home screen"/>
+  <img src="docs/screenshots/sahayak-live.png" width="190" alt="Sahayak Live: TinyFish cloud browser streaming the official CEIR site inside the app"/>
+  <img src="docs/screenshots/languages.png" width="190" alt="13 Indian languages"/>
+</p>
+<p align="center"><i>Home · Sahayak Live (TinyFish agent live on ceir.gov.in for a stolen phone) · 13 languages</i></p>
+
 ---
 
 ## Why it exists
@@ -53,16 +62,57 @@ flowchart LR
 ### Role of AI (Gemini)
 One multimodal model performs six jobs: speech understanding (13 languages, no separate STT), document vision, intent classification, browser-task planning (JSON), grounded verification against live pages, and scam classification. Structured tasks run in JSON mode at temperature 0.2, with automatic retry when the AI service is busy. **AI plans and explains; facts come from live official websites.**
 
-### TinyFish integration
-All three APIs sit behind one resilient client — `src/services/tinyfishApi.js` (REST client) and `src/services/liveIntel.js` (TinyFish + Gemini orchestration).
+### TinyFish integration — the "hands" of Nyaya Setu
+TinyFish is what turns Nyaya Setu from a chatbot into an agent that **works on the live web**. It powers 5 of the 13 features. All three APIs sit behind one resilient client: `src/services/tinyfishApi.js` (REST client) and `src/services/liveIntel.js` (TinyFish + Gemini orchestration).
 
 | API | Endpoint | Powers |
 |---|---|---|
-| **Agent** | `POST /v1/automation/run-async`, `GET /v1/runs/{id}`, `POST /v1/runs/{id}/cancel` | Sahayak Live — live `streaming_url` shown in a WebView, polled every 2 s, auto-stops at 150 s, user can stop anytime |
-| **Search** | `GET api.search.tinyfish.ai` | Verify Live, Scam Shield, Help Centres, Live Updates — India-located, `.gov.in` / `.nic.in` ranked first, 7-day news window |
-| **Fetch** | `POST api.fetch.tinyfish.ai` | Verify Live & quick answers — official pages as clean markdown, cited |
+| **Web Agent** | `POST /v1/automation/run-async`, `GET /v1/runs/{id}`, `POST /v1/runs/{id}/cancel` | **Sahayak Live**: a cloud browser opens the official site and does the task. Its `streaming_url` plays live inside the app, with a step timeline. Polled every 2 s; the user can stop anytime. |
+| **Search** | `GET api.search.tinyfish.ai` | Finds the **exact official page** for Sahayak Live, plus Verify Live, Scam Shield, Real Help Centres and Live Updates. India-located; `.gov.in` / `.nic.in` ranked first; 7-day window for news. |
+| **Fetch** | `POST api.fetch.tinyfish.ai` | Reads official pages as clean markdown for Verify Live and the quick answer; every answer cites its source. |
 
-**Resilience:** Sahayak Live gives a quick Search + Fetch answer (~15 s) while the agent works in parallel; captcha / block detection falls back automatically; help centres are cached 24 h and news 6 h.
+#### How a Sahayak Live task runs
+```mermaid
+flowchart TD
+  A[Citizen speaks a task<br/>any of 13 languages] --> B[Gemini plans<br/>official site + search query]
+  B --> C[TinyFish Search + Fetch<br/>reads up to 3 official pages]
+  B --> D[TinyFish Search<br/>finds the EXACT page on the site / myScheme]
+  C --> E[Quick answer spoken in ~15 s]
+  D --> F[TinyFish Web Agent opens it<br/>live stream inside the app]
+  F --> G{Blocked? 403 / captcha}
+  G -- yes --> H[Move to next official page<br/>up to 3 tries]
+  H --> F
+  G -- no --> I[Structured result<br/>eligibility · documents · steps · link]
+  I --> J[Gemini explains in the citizen's language<br/>'Verified live on the official website']
+  E -.if the agent can't finish.-> J
+```
+
+- **Deep-link start.** Starting the agent on the exact scheme page instead of a home page cut a live test run from **94 s to 52 s** (same PMAY-Urban task, TinyFish server timestamps).
+- **Knows which government sites block cloud browsers.** We tested 20 official hosts. The ones that return 403 or time out (e.g. `beneficiary.nha.gov.in`, `pmjay.gov.in`, `nfsa.gov.in`) are in `CLOUD_BLOCKED` and never chosen; the agent is sent to a reachable official page instead (e.g. `myscheme.gov.in/schemes/ab-pmjay`).
+- **Never stuck, never empty-handed.** If an early step shows 403 / captcha / a blank page, the run is cancelled and restarted on the next official page. A quick Search + Fetch answer from the same official sources is always ready.
+- **Read-only and official-only by design.** Every agent goal says: never log in, never type personal details, never submit forms or pay, and never leave `.gov.in` / `.nic.in` websites.
+- **Cost-aware.** Help centres are cached for 24 h and news for 6 h; agent runs happen only when the citizen asks.
+
+Excerpt of the goal the app sends to the TinyFish Web Agent (`buildGoal` in `liveIntel.js`):
+```text
+You are already on the official page that should contain the answer. Work fast:
+1. If a pop-up, cookie banner or language selector appears, close it.
+2. Read the page. Scroll down. If it has tabs (Benefits, Eligibility, Documents Required,
+   Application Process, FAQ), click each relevant tab and read it.
+3. Only if this page does not answer the task, click at most ONE relevant link on the same site.
+4. Never log in, never type personal details, never submit forms, never pay, and never
+   leave official .gov.in / .nic.in websites.
+Return JSON: title, summary, eligibility, benefits, documents[], steps[], fees, helpline, official_link.
+If the page shows 403 / Forbidden / a captcha / stays blank, return {"blocked": true}.
+```
+
+| Feature | TinyFish APIs used | What the citizen gets |
+|---|---|---|
+| 🛰️ Sahayak Live | Search → Web Agent (+ Fetch for the quick answer) | Watches AI do the task on the official site; spoken answer + official link |
+| ✅ Verify Live | Search + Fetch | Any AI answer checked against live official pages: *Verified / Updated / Partial*, with sources |
+| 🛡️ Scam Shield | Search (web + news) | Fake notice / SMS check against official sources and fraud alerts → *Genuine / Suspicious / Likely SCAM* |
+| 📍 Real Help Centres | Search | Real CSC, DLSA, police and One Stop Centres for the user's GPS city |
+| 📰 Live Updates | Search (news, last 7 days) | This week's scheme and fraud-alert news, translated |
 
 ### Safety & privacy
 - **Read-only agent** — never logs in, enters Aadhaar / OTP / bank details, pays or submits.
