@@ -48,6 +48,7 @@ export default function SahayakLiveScreen() {
   const scrollRef = useRef(null);
 
   const finalRef = useRef(false);
+  const hasAnswerRef = useRef(false); // an instant/quick answer is already on screen
   const spokeRef = useRef(false);
   const say = (text) => {
     spokeRef.current = true;
@@ -55,10 +56,12 @@ export default function SahayakLiveScreen() {
   };
 
   const start = async (text) => {
-    if (!text?.trim() || phase === "planning" || phase === "running") return;
+    // never run the "🎤 …" placeholder as a task (happened when "Try again" was tapped after a failed voice note)
+    if (!text?.trim() || /^🎤/.test(text.trim()) || phase === "planning" || phase === "running") return;
     stopRef.current = false;
     finalRef.current = false;
     spokeRef.current = false;
+    hasAnswerRef.current = false;
     stopSpeaking();
     setRequest(text);
     setPlan(null);
@@ -83,11 +86,19 @@ export default function SahayakLiveScreen() {
             steps: u.steps || prev.steps,
             elapsed: u.elapsed ?? prev.elapsed,
           })),
-        onQuick: (q) => {
-          // fast answer from official pages — shown while the live agent keeps working
+        onInstant: (a) => {
+          // instant spoken answer while the cloud browser starts
           if (finalRef.current || stopRef.current) return;
+          hasAnswerRef.current = true;
+          setResult((prev) => (prev && prev.mode !== "instant" ? prev : a));
+          if (!spokeRef.current) say(a.answer);
+        },
+        onQuick: (q) => {
+          // answer read from official pages — replaces the instant one on screen while the live agent keeps working
+          if (finalRef.current || stopRef.current) return;
+          hasAnswerRef.current = true;
           setResult(q);
-          say(q.answer);
+          if (!spokeRef.current) say(q.answer);
         },
         shouldStop: () => stopRef.current,
       });
@@ -104,6 +115,12 @@ export default function SahayakLiveScreen() {
       setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 300);
     } catch (e) {
       finalRef.current = true;
+      // keep the answer the citizen already heard instead of replacing it with an error
+      if (hasAnswerRef.current) {
+        setLive((prev) => ({ ...prev, status: "FALLBACK" }));
+        setPhase("done");
+        return;
+      }
       setError(e.message || "Something went wrong.");
       setPhase("error");
     }
@@ -133,7 +150,8 @@ export default function SahayakLiveScreen() {
         const text = await geminiTranscribe(base64, "audio/m4a");
         setPhase("idle");
         if (!text?.trim()) {
-          setError("Couldn't understand the voice note (AI busy or no internet). Please try again or type your task.");
+          setRequest("");
+          setError("Couldn't understand the voice note (AI busy or no internet). Please tap 🎤 and speak again, or type your task.");
           setPhase("error");
           return;
         }
@@ -171,7 +189,7 @@ export default function SahayakLiveScreen() {
               {phase === "error" && (
                 <View style={styles.errorCard}>
                   <Text style={styles.errorText}>⚠️ {error}</Text>
-                  <TouchableOpacity onPress={() => start(request)}>
+                  <TouchableOpacity onPress={() => (request && !/^🎤/.test(request) ? start(request) : handleMicPress())}>
                     <Text style={styles.retry}>Try again</Text>
                   </TouchableOpacity>
                 </View>
@@ -216,11 +234,11 @@ export default function SahayakLiveScreen() {
                   {result && <View style={{ height: SPACING.md }} />}
                 </>
               )}
-              {result && (phase === "done" || phase === "running") && (
+              {result && (phase === "done" || phase === "running" || phase === "planning") && (
                 <View style={styles.resultCard}>
                   <View style={styles.resultHead}>
                     <Text style={styles.resultBadge}>
-                      {phase === "running" ? `⚡ ${t("quickAnswer")} · live browser is double-checking on ${plan?.siteName || "the official site"}…` : result.mode === "agent" ? `✅ Verified live on ${plan?.siteName || "the official website"}` : "✅ Read live from official government pages"}
+                      {phase !== "done" && result.mode === "instant" ? "🧠 Instant answer · TinyFish agent is now opening the official website to verify it live…" : phase === "running" ? `⚡ ${t("quickAnswer")} · live browser is double-checking on ${plan?.siteName || "the official site"}…` : result.mode === "agent" ? `✅ Verified live on ${plan?.siteName || "the official website"}` : "✅ Read live from official government pages"}
                     </Text>
                     <TouchableOpacity onPress={() => say(result.answer)}>
                       <Text style={styles.speaker}>🔊</Text>
@@ -228,6 +246,22 @@ export default function SahayakLiveScreen() {
                   </View>
                   <Text style={styles.answer}>{result.answer}</Text>
 
+                  {result.eligibility?.length > 0 && (
+                    <View style={styles.block}>
+                      <Text style={styles.blockTitle}>✅ {t("whoCanApply")}</Text>
+                      {result.eligibility.map((f, i) => (
+                        <Text key={i} style={styles.item}>• {f}</Text>
+                      ))}
+                    </View>
+                  )}
+                  {result.documents?.length > 0 && (
+                    <View style={styles.block}>
+                      <Text style={styles.blockTitle}>📄 {t("documentsNeeded")}</Text>
+                      {result.documents.map((f, i) => (
+                        <Text key={i} style={styles.item}>☐ {f}</Text>
+                      ))}
+                    </View>
+                  )}
                   {result.keyFacts?.length > 0 && (
                     <View style={styles.block}>
                       <Text style={styles.blockTitle}>{t("keyFacts")}</Text>
@@ -253,7 +287,7 @@ export default function SahayakLiveScreen() {
                     style={styles.shareBtn}
                     onPress={() =>
                       Share.share({
-                        message: `${request}\n\n${result.answer}${result.nextSteps?.length ? `\n\nNext steps:\n${result.nextSteps.map((x, i) => `${i + 1}. ${x}`).join("\n")}` : ""}${result.officialLink ? `\n\nOfficial link: ${result.officialLink}` : ""}\n\n— verified live with Nyaya Setu`,
+                        message: `${request}\n\n${result.answer}${result.documents?.length ? `\n\nDocuments needed:\n${result.documents.map((x) => `• ${x}`).join("\n")}` : ""}${result.nextSteps?.length ? `\n\nNext steps:\n${result.nextSteps.map((x, i) => `${i + 1}. ${x}`).join("\n")}` : ""}${result.officialLink ? `\n\nOfficial link: ${result.officialLink}` : ""}\n\n— verified live with Nyaya Setu`,
                       }).catch(() => {})
                     }
                   >

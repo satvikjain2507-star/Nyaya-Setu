@@ -1,61 +1,105 @@
 import axios from "axios";
 import { scriptOf } from "../utils/language";
 
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-const MODEL = "gemini-3.5-flash-lite";
-// used only if the main model stays overloaded after all retries
-const FALLBACK_MODEL = "gemini-flash-latest";
+// Up to 3 keys (from different Google accounts) — each has its own free quota.
+const KEYS = [process.env.EXPO_PUBLIC_GEMINI_API_KEY, process.env.EXPO_PUBLIC_GEMINI_API_KEY_2, process.env.EXPO_PUBLIC_GEMINI_API_KEY_3].filter(
+  (k) => k && k !== "your_gemini_api_key_here"
+);
+// Every model has its OWN free-tier quota. If one is rate-limited or used up for the day,
+// the app silently moves to the next one, so a busy model never breaks a feature.
+// Always tried in this order: the main model (500 requests/day on your free tier) first, backups only if it fails.
+const MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
 const urlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-const RETRY_DELAYS = [1200, 2500, 5000];
+
+const cooldownUntil = new Map(); // "keyIndex|model" -> time it may be used again
+const missingModels = new Set(); // models this key/project doesn't have (404)
+/** Last error from Gemini, for the Settings diagnostic line and the Expo log. */
+export let lastGeminiError = "";
 
 /** Friendly message shown when the AI service can't be reached (never a raw error code). */
 export const AI_BUSY = "The AI assistant is very busy right now. Please tap Send again in a few seconds — your message is safe.";
 export const isAiBusy = (text) => typeof text === "string" && text === AI_BUSY;
 
-const hasKey = () => Boolean(GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_api_key_here");
+const hasKey = () => KEYS.length > 0;
 
 export const hasGeminiKey = hasKey;
 
-async function callGemini(systemPrompt, parts, opts = {}, attempt = 0) {
-  const { json = false, maxOutputTokens = 2048, timeout = 30000, model = MODEL } = opts;
+function combos() {
+  const all = [];
+  KEYS.forEach((_, k) => MODELS.forEach((m) => all.push({ k, m })));
+  const now = Date.now();
+  const usable = all.filter((c) => !missingModels.has(c.m) && (cooldownUntil.get(`${c.k}|${c.m}`) || 0) <= now);
+  // if everything is cooling down, try them all anyway (cool-downs are only estimates)
+  return usable.length ? usable : all.filter((c) => !missingModels.has(c.m));
+}
+
+async function callGemini(systemPrompt, parts, opts = {}) {
+  const { json = false, maxOutputTokens = 2048, timeout = 30000 } = opts;
   if (!hasKey()) {
     return json ? null : mockReply(systemPrompt);
   }
+  const deadline = Date.now() + Math.max(timeout * 2, 45000);
+  const body = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      temperature: json ? 0.2 : 0.4,
+      maxOutputTokens,
+      ...(json ? { responseMimeType: "application/json" } : {}),
+    },
+  };
 
-  try {
-    const response = await axios.post(
-      `${urlFor(model)}?key=${GEMINI_API_KEY}`,
-      {
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          temperature: json ? 0.2 : 0.4,
-          maxOutputTokens,
-          ...(json ? { responseMimeType: "application/json" } : {}),
-        },
-      },
-      { headers: { "Content-Type": "application/json" }, timeout }
-    );
-    const candidate = response.data.candidates?.[0];
-    const text = (candidate?.content?.parts || []).map((p) => p.text || "").join("").trim();
-    if (json) return parseJsonLoose(text);
-    return text || "Sorry, I couldn't generate a reply. Please try again.";
-  } catch (err) {
-    const status = err?.response?.status;
-    const retryable = [429, 500, 502, 503, 504].includes(status) || !status; // !status = timeout / network blip
-    // overloaded / rate-limited / network blip: wait and retry with back-off
-    if (retryable && attempt < RETRY_DELAYS.length) {
-      await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
-      return callGemini(systemPrompt, parts, opts, attempt + 1);
+  for (const c of combos()) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (Date.now() > deadline) break;
+      try {
+        // same request format that has always worked for this app (key as ?key= query parameter)
+        const response = await axios.post(`${urlFor(c.m)}?key=${KEYS[c.k]}`, body, {
+          headers: { "Content-Type": "application/json" },
+          timeout,
+        });
+        const candidate = response.data.candidates?.[0];
+        const text = (candidate?.content?.parts || []).map((p) => p.text || "").join("").trim();
+        if (!text) throw Object.assign(new Error("empty reply"), { emptyReply: true });
+        lastGeminiError = "";
+        if (json) {
+          const parsed = parseJsonLoose(text);
+          if (parsed) return parsed;
+          throw Object.assign(new Error("bad JSON"), { emptyReply: true });
+        }
+        return text;
+      } catch (err) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.error?.message || err.message || "";
+        lastGeminiError = `${c.m}: ${status || "network"} ${msg}`.slice(0, 200);
+        console.log("Gemini:", lastGeminiError);
+        if (status === 404 || (status === 400 && /not found|not supported|unknown model|invalid model/i.test(msg))) {
+          missingModels.add(c.m);
+          break; // next model
+        }
+        if (status === 429) {
+          const daily = /per ?day|daily|PerDay/i.test(msg);
+          cooldownUntil.set(`${c.k}|${c.m}`, Date.now() + (daily ? 3600000 : 60000));
+          break; // next model straight away — it has its own quota
+        }
+        if (status === 401 || status === 403 || (status === 400 && /api key/i.test(msg))) {
+          MODELS.forEach((m) => cooldownUntil.set(`${c.k}|${m}`, Date.now() + 3600000));
+          break; // this key is bad — the next key (if any) is tried
+        }
+        if (err.emptyReply || status === 500 || status === 502 || status === 503 || status === 504 || !status) {
+          if (attempt === 0) {
+            await new Promise((r) => setTimeout(r, 600));
+            continue; // one quick retry on the same model
+          }
+          break;
+        }
+        break; // any other error: try the next model
+      }
     }
-    // still overloaded: try the backup model once
-    if (retryable && model !== FALLBACK_MODEL && status) {
-      return callGemini(systemPrompt, parts, { ...opts, model: FALLBACK_MODEL }, RETRY_DELAYS.length);
-    }
-    console.log("Gemini unavailable:", status, err?.response?.data?.error?.message || err.message);
-    if (json) return null;
-    return AI_BUSY;
+    if (Date.now() > deadline) break;
   }
+  if (json) return null;
+  return AI_BUSY;
 }
 
 function parseJsonLoose(text) {
@@ -79,7 +123,7 @@ function parseJsonLoose(text) {
  * Returns a parsed object, or null on failure / no key.
  */
 export async function geminiJSON(systemPrompt, userText, opts = {}) {
-  return callGemini(systemPrompt, [{ text: userText }], { json: true, maxOutputTokens: 4096, timeout: 45000, ...opts });
+  return callGemini(systemPrompt, [{ text: userText }], { json: true, maxOutputTokens: 4096, timeout: 30000, ...opts });
 }
 
 /** Transcribe a voice recording into plain text (any Indian language). */
@@ -91,7 +135,7 @@ export async function geminiTranscribe(audioBase64, mimeType = "audio/m4a") {
       { text: "Transcribe this audio exactly, in the language it was spoken. Reply with ONLY the transcription." },
       { inline_data: { mime_type: mimeType, data: audioBase64 } },
     ],
-    { maxOutputTokens: 512, timeout: 60000 }
+    { maxOutputTokens: 512, timeout: 30000 }
   );
   if (!text || isAiBusy(text)) return "";
   return text.replace(/^["']|["']$/g, "");

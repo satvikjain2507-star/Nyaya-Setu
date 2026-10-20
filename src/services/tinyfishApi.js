@@ -159,7 +159,7 @@ export async function tinyfishFetch(urls, { purpose, perUrlTimeoutMs = 40000, ma
 // ───────────────────────────── AGENT API ─────────────────────────────
 
 /** Start a browser-agent run. Returns the run_id immediately. */
-export async function startAgentRun({ url, goal, browserProfile = "lite", maxSteps = 25 }) {
+export async function startAgentRun({ url, goal, browserProfile = "lite" }) {
   if (!hasTinyFishKey()) return `demo-${Date.now()}`;
 
   const start = (body) => tfRequest(`${AGENT_BASE}/automation/run-async`, { method: "POST", timeout: TIMEOUTS.agentStart, body });
@@ -168,6 +168,8 @@ export async function startAgentRun({ url, goal, browserProfile = "lite", maxSte
     // NOTE: custom agent_config (max_steps etc.) needs TinyFish beta access — sending it
     // returns 403 FORBIDDEN on normal accounts, so we keep the request minimal.
     // The app itself cancels the run after maxWaitMs, so it can't run forever.
+    // "lite" browser, no proxy: tested live on 21 Oct — loads myScheme in ~4 s and finished the
+    // PMAY task in 13 steps. (An Indian proxy was tested too and failed with ERR_TUNNEL_CONNECTION_FAILED.)
     data = await start({ url, goal, browser_profile: browserProfile });
   } catch (e) {
     // Some accounts/plans reject optional fields — retry with only the required ones.
@@ -255,8 +257,12 @@ function normaliseResult(result) {
  * blocked it. This checks the result for typical failure signals.
  */
 export function looksBlocked(result) {
-  const s = JSON.stringify(result || "").toLowerCase();
-  return /captcha|access denied|blocked|forbidden|403|could not access|unable to access|cloudflare/.test(s);
+  if (!result) return true;
+  if (result.blocked === true) return true;
+  const s = JSON.stringify(result).toLowerCase();
+  // only a SHORT result that is mostly an error message counts as blocked — a real answer may
+  // legitimately mention "blocked" (e.g. "how to get your stolen phone blocked")
+  return s.length < 400 && /captcha|access denied|forbidden|\b403\b|could not access|unable to access|cloudflare/.test(s);
 }
 
 /** Lightweight connectivity test used by the Settings screen. */

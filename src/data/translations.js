@@ -16,6 +16,8 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
+    whoCanApply: "Who can apply",
+    documentsNeeded: "Documents needed",
     scamShield: "Scam Shield",
     scamShieldDesc: "Got a suspicious SMS, call or notice? Check it in seconds",
     translatorDesc: "Translate between 13 Indian languages, by voice or text",
@@ -77,6 +79,8 @@ export const STRINGS = {
     findingRealCentres: "Finding real help centres in",
   },
   hi: {
+    whoCanApply: "कौन आवेदन कर सकता है",
+    documentsNeeded: "ज़रूरी दस्तावेज़",
     scamShield: "स्कैम शील्ड",
     scamShieldDesc: "संदिग्ध SMS, कॉल या नोटिस? सेकंडों में जाँचें",
     translatorDesc: "13 भारतीय भाषाओं में आवाज़ या टेक्स्ट से अनुवाद करें",
@@ -138,6 +142,8 @@ export const STRINGS = {
     findingRealCentres: "असली सहायता केंद्र खोजे जा रहे हैं —",
   },
   mr: {
+    whoCanApply: "कोण अर्ज करू शकतो",
+    documentsNeeded: "आवश्यक कागदपत्रे",
     scamShield: "स्कॅम शील्ड",
     scamShieldDesc: "संशयास्पद SMS, कॉल किंवा नोटीस? काही सेकंदांत तपासा",
     translatorDesc: "१३ भारतीय भाषांमध्ये आवाज किंवा मजकुराने भाषांतर करा",
@@ -191,6 +197,8 @@ export const STRINGS = {
     liveUpdates: "नागरिकांसाठी ताज्या बातम्या",
   },
   bn: {
+    whoCanApply: "কারা আবেদন করতে পারবেন",
+    documentsNeeded: "প্রয়োজনীয় কাগজপত্র",
     scamShield: "স্ক্যাম শিল্ড",
     scamShieldDesc: "সন্দেহজনক SMS, কল বা নোটিস? সেকেন্ডে যাচাই করুন",
     translatorDesc: "১৩টি ভারতীয় ভাষায় কণ্ঠস্বর বা লেখার মাধ্যমে অনুবাদ করুন",
@@ -225,6 +233,8 @@ export const STRINGS = {
     askAboutPhoto: "একটি প্রশ্ন জিজ্ঞাসা করুন, অথবা শুধু ক্যামেরা চেপে কিছু ছবি তুলুন।",
   },
   te: {
+    whoCanApply: "ఎవరు దరఖాస్తు చేయవచ్చు",
+    documentsNeeded: "అవసరమైన పత్రాలు",
     scamShield: "స్కామ్ షీల్డ్",
     scamShieldDesc: "అనుమానాస్పద SMS, కాల్ లేదా నోటీసు? క్షణాల్లో తనిఖీ చేయండి",
     translatorDesc: "13 భారతీయ భాషల్లో వాయిస్ లేదా టెక్స్ట్ ద్వారా అనువదించండి",
@@ -259,6 +269,8 @@ export const STRINGS = {
     askAboutPhoto: "ప్రశ్న అడగండి, లేదా కెమెరాను నొక్కి ఏదైనా ఫోటో తీయండి.",
   },
   ta: {
+    whoCanApply: "யார் விண்ணப்பிக்கலாம்",
+    documentsNeeded: "தேவையான ஆவணங்கள்",
     scamShield: "ஸ்கேம் ஷீல்ட்",
     scamShieldDesc: "சந்தேகமான SMS, அழைப்பு அல்லது நோட்டீஸ்? நொடிகளில் சரிபார்க்கவும்",
     translatorDesc: "13 இந்திய மொழிகளில் குரல் அல்லது உரை மூலம் மொழிபெயர்க்கவும்",
@@ -293,6 +305,8 @@ export const STRINGS = {
     askAboutPhoto: "ஒரு கேள்வி கேளுங்கள், அல்லது கேமராவை அழுத்தி எதையாவது புகைப்படம் எடுங்கள்.",
   },
   gu: {
+    whoCanApply: "કોણ અરજી કરી શકે",
+    documentsNeeded: "જરૂરી દસ્તાવેજો",
     scamShield: "સ્કેમ શીલ્ડ",
     scamShieldDesc: "શંકાસ્પદ SMS, કૉલ કે નોટિસ? સેકન્ડોમાં તપાસો",
     translatorDesc: "13 ભારતીય ભાષાઓમાં અવાજ અથવા લખાણ દ્વારા અનુવાદ કરો",
@@ -327,6 +341,8 @@ export const STRINGS = {
     askAboutPhoto: "પ્રશ્ન પૂછો, અથવા ફક્ત કેમેરા દબાવીને કંઈક ફોટો પાડો.",
   },
   ur: {
+    whoCanApply: "کون درخواست دے سکتا ہے",
+    documentsNeeded: "ضروری دستاویزات",
     scamShield: "اسکیم شیلڈ",
     scamShieldDesc: "مشکوک SMS، کال یا نوٹس؟ سیکنڈوں میں جانچیں",
     translatorDesc: "13 بھارتی زبانوں میں آواز یا تحریر سے ترجمہ کریں",
@@ -361,6 +377,8 @@ export const STRINGS = {
     askAboutPhoto: "سوال پوچھیں، یا صرف کیمرہ دبا کر کچھ تصویر لیں۔",
   },
   kn: {
+    whoCanApply: "ಯಾರು ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು",
+    documentsNeeded: "ಅಗತ್ಯ ದಾಖಲೆಗಳು",
     scamShield: "ಸ್ಕ್ಯಾಮ್ ಶೀಲ್ಡ್",
     scamShieldDesc: "ಅನುಮಾನಾಸ್ಪದ SMS, ಕರೆ ಅಥವಾ ನೋಟಿಸ್? ಕ್ಷಣದಲ್ಲಿ ಪರಿಶೀಲಿಸಿ",
     translatorDesc: "13 ಭಾರತೀಯ ಭಾಷೆಗಳಲ್ಲಿ ಧ್ವನಿ ಅಥವಾ ಪಠ್ಯದ ಮೂಲಕ ಅನುವಾದಿಸಿ",
@@ -395,6 +413,8 @@ export const STRINGS = {
     askAboutPhoto: "ಪ್ರಶ್ನೆ ಕೇಳಿ, ಅಥವಾ ಕ್ಯಾಮೆರಾ ಒತ್ತಿ ಏನಾದರೂ ಫೋಟೋ ತೆಗೆಯಿರಿ.",
   },
   or: {
+    whoCanApply: "କିଏ ଆବେଦନ କରିପାରିବେ",
+    documentsNeeded: "ଆବଶ୍ୟକ ଦସ୍ତାବିଜ",
     scamShield: "ସ୍କାମ୍ ଶିଲ୍ଡ",
     scamShieldDesc: "ସନ୍ଦେହଜନକ SMS, କଲ୍ କିମ୍ବା ନୋଟିସ୍? କିଛି ସେକେଣ୍ଡରେ ଯାଞ୍ଚ କରନ୍ତୁ",
     translatorDesc: "13ଟି ଭାରତୀୟ ଭାଷାରେ ସ୍ୱର କିମ୍ବା ଲେଖା ଦ୍ୱାରା ଅନୁବାଦ କରନ୍ତୁ",
@@ -429,6 +449,8 @@ export const STRINGS = {
     askAboutPhoto: "ଏକ ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ, କିମ୍ବା କେବଳ କ୍ୟାମେରା ଦବାଇ କିଛି ଫଟୋ ଉଠାନ୍ତୁ।",
   },
   ml: {
+    whoCanApply: "ആർക്കൊക്കെ അപേക്ഷിക്കാം",
+    documentsNeeded: "ആവശ്യമായ രേഖകൾ",
     scamShield: "സ്കാം ഷീൽഡ്",
     scamShieldDesc: "സംശയകരമായ SMS, കോൾ അല്ലെങ്കിൽ നോട്ടീസ്? നിമിഷങ്ങൾക്കുള്ളിൽ പരിശോധിക്കുക",
     translatorDesc: "13 ഇന്ത്യൻ ഭാഷകളിൽ ശബ്ദം അല്ലെങ്കിൽ ടെക്സ്റ്റ് വഴി വിവർത്തനം ചെയ്യുക",
@@ -463,6 +485,8 @@ export const STRINGS = {
     askAboutPhoto: "ഒരു ചോദ്യം ചോദിക്കുക, അല്ലെങ്കിൽ ക്യാമറ അമർത്തി എന്തെങ്കിലും ഫോട്ടോ എടുക്കുക.",
   },
   pa: {
+    whoCanApply: "ਕੌਣ ਅਰਜ਼ੀ ਦੇ ਸਕਦਾ ਹੈ",
+    documentsNeeded: "ਲੋੜੀਂਦੇ ਦਸਤਾਵੇਜ਼",
     scamShield: "ਸਕੈਮ ਸ਼ੀਲਡ",
     scamShieldDesc: "ਸ਼ੱਕੀ SMS, ਕਾਲ ਜਾਂ ਨੋਟਿਸ? ਸਕਿੰਟਾਂ ਵਿੱਚ ਜਾਂਚੋ",
     translatorDesc: "13 ਭਾਰਤੀ ਭਾਸ਼ਾਵਾਂ ਵਿੱਚ ਆਵਾਜ਼ ਜਾਂ ਲਿਖਤ ਰਾਹੀਂ ਅਨੁਵਾਦ ਕਰੋ",
@@ -497,6 +521,8 @@ export const STRINGS = {
     askAboutPhoto: "ਇੱਕ ਸਵਾਲ ਪੁੱਛੋ, ਜਾਂ ਸਿਰਫ਼ ਕੈਮਰਾ ਦਬਾ ਕੇ ਕੁਝ ਫੋਟੋ ਖਿੱਚੋ।",
   },
   as: {
+    whoCanApply: "কোনে আবেদন কৰিব পাৰে",
+    documentsNeeded: "প্ৰয়োজনীয় নথিপত্ৰ",
     scamShield: "স্কেম শ্বিল্ড",
     scamShieldDesc: "সন্দেহজনক SMS, কল বা জাননী? কেইছেকেণ্ডমানতে পৰীক্ষা কৰক",
     translatorDesc: "১৩টা ভাৰতীয় ভাষাত কণ্ঠস্বৰ বা লিখনীৰে অনুবাদ কৰক",
