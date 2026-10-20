@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Animated, Easing } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Animated, Easing, Share } from "react-native";
 import { COLORS, RADIUS, SPACING } from "../constants/theme";
 
 export const LIVE_COLORS = {
@@ -120,10 +120,36 @@ export default function LiveCard({ data }) {
         </TouchableOpacity>
       )}
 
+      {data.kind === "scam" && data.verdict !== "likely_genuine" && (
+        <View style={styles.actRow}>
+          <TouchableOpacity style={[styles.act, styles.actDanger]} onPress={() => Linking.openURL("tel:1930").catch(() => {})}>
+            <Text style={[styles.actText, { color: "#fff" }]}>📞 Call 1930</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.act} onPress={() => openLink("https://cybercrime.gov.in")}>
+            <Text style={styles.actText}>🌐 Report online</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <View style={styles.actRow}>
+        <TouchableOpacity
+          style={styles.act}
+          onPress={() =>
+            Share.share({
+              message:
+                data.kind === "scam"
+                  ? `⚠️ ${VERDICT_LABEL[data.verdict] || "Checked"}: ${data.headline}\n${(data.reasons || []).slice(0, 3).map((r) => "• " + r).join("\n")}\nNever share OTP/PIN. Cyber fraud helpline: 1930\n— checked with Nyaya Setu`
+                  : `✅ ${data.headline}\n${data.summary || ""}${data.officialLink ? `\nOfficial link: ${data.officialLink}` : ""}\n— verified live with Nyaya Setu`,
+            }).catch(() => {})
+          }
+        >
+          <Text style={styles.actText}>{data.kind === "scam" ? "📤 Warn family & friends" : "📤 Share"}</Text>
+        </TouchableOpacity>
+      </View>
+
       <SourceChips sources={data.sources} />
 
       <Text style={styles.footer}>
-        Checked live via TinyFish{time ? ` · ${time}` : ""}
+        {data.offline ? "Instant safety scan (offline)" : "Checked live via TinyFish"}{time ? ` · ${time}` : ""}
         {data.demo ? " · DEMO MODE" : ""}
       </Text>
     </View>
@@ -158,6 +184,10 @@ const styles = StyleSheet.create({
   todoTitle: { fontWeight: "800", color: COLORS.ink, fontSize: 12.5, marginBottom: 2 },
   officialBtn: { marginTop: SPACING.md, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingVertical: 10, alignItems: "center" },
   officialBtnText: { color: COLORS.white, fontWeight: "700", fontSize: 13.5 },
+  actRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: SPACING.sm + 2 },
+  act: { backgroundColor: COLORS.parchment, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: COLORS.border },
+  actDanger: { backgroundColor: "#B42318", borderColor: "#B42318" },
+  actText: { fontSize: 12.5, fontWeight: "800", color: COLORS.ink },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: SPACING.sm + 2 },
   chip: { backgroundColor: COLORS.parchment, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: COLORS.border, maxWidth: 200 },
   chipOfficial: { backgroundColor: COLORS.tealSoft, borderColor: COLORS.teal },

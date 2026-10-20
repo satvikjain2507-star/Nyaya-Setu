@@ -7,7 +7,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useRef, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from "react-native";
+import KeyboardAware from "../components/KeyboardAware";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatInput from "../components/ChatInput";
 import AgentLiveView from "../components/AgentLiveView";
@@ -148,6 +149,7 @@ export default function SahayakLiveScreen() {
 
   return (
     <SafeAreaView edges={["left", "right"]} style={[styles.safe, { paddingTop: insets.top, backgroundColor: COLORS.ink }]}>
+      <KeyboardAware>
       <ScrollView ref={scrollRef} style={{ backgroundColor: COLORS.parchment }} contentContainerStyle={{ paddingBottom: SPACING.xl }} keyboardShouldPersistTaps="handled">
         {/* Hero */}
         <View style={styles.hero}>
@@ -247,6 +249,16 @@ export default function SahayakLiveScreen() {
                       <Text style={styles.officialText}>Open official website ↗</Text>
                     </TouchableOpacity>
                   )}
+                  <TouchableOpacity
+                    style={styles.shareBtn}
+                    onPress={() =>
+                      Share.share({
+                        message: `${request}\n\n${result.answer}${result.nextSteps?.length ? `\n\nNext steps:\n${result.nextSteps.map((x, i) => `${i + 1}. ${x}`).join("\n")}` : ""}${result.officialLink ? `\n\nOfficial link: ${result.officialLink}` : ""}\n\n— verified live with Nyaya Setu`,
+                      }).catch(() => {})
+                    }
+                  >
+                    <Text style={styles.shareText}>📤 Share on WhatsApp</Text>
+                  </TouchableOpacity>
                   <SourceChips sources={result.sources} />
                   {result.demo && <Text style={styles.demo}>Demo mode — add your TinyFish key in .env for real live runs.</Text>}
                 </View>
@@ -289,6 +301,7 @@ export default function SahayakLiveScreen() {
         placeholder={t("sahayakPlaceholder")}
         sendLabel={t("go")}
       />
+      </KeyboardAware>
     </SafeAreaView>
   );
 }
@@ -340,6 +353,8 @@ const styles = StyleSheet.create({
   blockTitle: { fontWeight: "800", color: COLORS.ink, fontSize: 12.5, marginBottom: 4 },
   item: { fontSize: 13.5, color: COLORS.darkGray, lineHeight: 20 },
   officialBtn: { marginTop: SPACING.md, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" },
+  shareBtn: { marginTop: SPACING.sm, borderRadius: RADIUS.pill, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: "#25D366", backgroundColor: "#EAFBF0" },
+  shareText: { color: "#128C4A", fontWeight: "800" },
   officialText: { color: COLORS.white, fontWeight: "700" },
   demo: { marginTop: SPACING.sm, fontSize: 11, color: COLORS.midGray },
   newBtn: { alignSelf: "center", marginTop: SPACING.lg, backgroundColor: COLORS.gold, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.xl, paddingVertical: 10 },

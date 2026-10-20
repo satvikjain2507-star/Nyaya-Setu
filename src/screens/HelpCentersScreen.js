@@ -43,7 +43,7 @@ export default function HelpCentersScreen() {
         try {
           const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
           if (geo) {
-            const p = { city: geo.city || geo.subregion, district: geo.subregion || geo.city, state: geo.region };
+            const p = { city: geo.city || geo.subregion, district: geo.subregion || geo.city, state: geo.region, locality: geo.district || geo.street || "" };
             setPlace(p);
             runLive(p);
           }
@@ -88,8 +88,24 @@ export default function HelpCentersScreen() {
   const showLive = liveState === "done" && liveCenters.length > 0;
   const data = showLive ? liveCenters : centers;
 
+  const HELPLINES = [
+    ["112", "Emergency"],
+    ["1930", "Cyber fraud"],
+    ["15100", "Free legal aid"],
+    ["181", "Women helpline"],
+    ["14599", "CSC helpdesk"],
+  ];
+
   const Header = (
     <View>
+      <View style={styles.helpRow}>
+        {HELPLINES.map(([n, l]) => (
+          <TouchableOpacity key={n} style={styles.helpBtn} onPress={() => Linking.openURL(`tel:${n}`)}>
+            <Text style={styles.helpNum}>📞 {n}</Text>
+            <Text style={styles.helpLbl}>{l}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       {place && (
         <View style={styles.liveBanner}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -111,7 +127,11 @@ export default function HelpCentersScreen() {
       {liveState === "loading" && (
         <LiveWorking lines={["Searching CSC centres near you…", "Finding your District Legal Services Authority…", "Finding police stations & One Stop Centres…", "Extracting addresses & phone numbers…"]} />
       )}
-      {!showLive && <Text style={styles.sampleNote}>{errorMsg || "Sample centres (offline list):"}</Text>}
+      {!showLive && liveState !== "loading" && (
+        <Text style={styles.sampleNote}>
+          {errorMsg || (liveState === "done" ? "Couldn't confirm exact addresses online right now — showing known centres:" : "Known centres (offline list):")}
+        </Text>
+      )}
     </View>
   );
 
@@ -161,6 +181,10 @@ export default function HelpCentersScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
   center: { justifyContent: "center", alignItems: "center" },
+  helpRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: SPACING.md },
+  helpBtn: { backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: "#EBC6CD" },
+  helpNum: { color: COLORS.rose, fontWeight: "800", fontSize: 13 },
+  helpLbl: { color: COLORS.darkGray, fontSize: 10.5, marginTop: 1 },
   sampleNote: { color: COLORS.midGray, fontSize: 12, padding: 8 },
   liveBanner: { backgroundColor: COLORS.ink, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   liveTitle: { color: COLORS.white, fontWeight: "800", fontSize: 14, flexShrink: 1 },

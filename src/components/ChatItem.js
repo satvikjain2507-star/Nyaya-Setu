@@ -9,6 +9,7 @@ import LiveCard, { LiveWorking } from "./LiveCard";
 export default function ChatItem({ item, accentColor, actions }) {
   if (item.kind === "live") return <LiveCard data={item.data} />;
   if (item.kind === "liveLoading") return <LiveWorking lines={item.lines || ["Checking live…"]} />;
+  if (item.kind === "liveError") return <ChatBubble role="bot" text={item.text} accentColor="#B42318" />;
   return <ChatBubble role={item.role} text={item.text} loading={item.loading} accentColor={accentColor} actions={actions} />;
 }
 
@@ -46,7 +47,7 @@ export async function runLiveCheckForMessage({ messages, item, setMessages, pers
     onResult?.(data);
   } catch (e) {
     failed = true;
-    replacement = { id: loadingId, kind: "liveError", role: "bot", text: `⚠️ Live check failed: ${e.message}` };
+    replacement = { id: loadingId, kind: "liveError", role: "bot", text: "⚠️ The live check couldn't finish (slow network or busy service). Tap the button again in a moment." };
   }
 
   setMessages((prev) => {

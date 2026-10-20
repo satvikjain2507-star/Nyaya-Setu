@@ -1,23 +1,36 @@
 import React, { useState } from "react";
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import AttachSheet from "./AttachSheet";
 
-export default function ChatInput({ onSend, onMicPress, onImagePress, isRecording, placeholder, sendLabel }) {
+/**
+ * Chat input bar.
+ *  - onAttach(source)  → shows 📎 with a sheet: camera / gallery / PDF-file
+ *  - onImagePress()    → legacy single camera button (still supported)
+ *  - onMicPress        → 🎤 voice
+ *  - allowEmptySend    → Send works with an empty box (e.g. "explain this photo")
+ */
+export default function ChatInput({ onSend, onMicPress, onImagePress, onAttach, isRecording, placeholder, sendLabel, allowEmptySend, attachTitle }) {
   const [value, setValue] = useState("");
+  const [sheet, setSheet] = useState(false);
 
   const handleSend = () => {
-    if (!value.trim()) return;
+    if (!value.trim() && !allowEmptySend) return;
     onSend(value.trim());
     setValue("");
   };
 
   return (
     <View style={styles.container}>
-      {onImagePress && (
+      {onAttach ? (
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setSheet(true)} accessibilityLabel="Attach photo or document">
+          <Text style={styles.iconText}>📎</Text>
+        </TouchableOpacity>
+      ) : onImagePress ? (
         <TouchableOpacity style={styles.iconBtn} onPress={onImagePress}>
           <Text style={styles.iconText}>📷</Text>
         </TouchableOpacity>
-      )}
+      ) : null}
       <TextInput
         style={styles.input}
         value={value}
@@ -27,16 +40,14 @@ export default function ChatInput({ onSend, onMicPress, onImagePress, isRecordin
         multiline
       />
       {onMicPress && (
-        <TouchableOpacity
-          style={[styles.iconBtn, isRecording && styles.iconBtnRecording]}
-          onPress={onMicPress}
-        >
-          <Text style={styles.iconText}>{isRecording ? "●" : "🎤"}</Text>
+        <TouchableOpacity style={[styles.iconBtn, isRecording && styles.iconBtnRecording]} onPress={onMicPress}>
+          <Text style={styles.iconText}>{isRecording ? "■" : "🎤"}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
         <Text style={styles.sendText}>{sendLabel || "Send"}</Text>
       </TouchableOpacity>
+      {onAttach && <AttachSheet visible={sheet} onClose={() => setSheet(false)} onPick={onAttach} title={attachTitle} />}
     </View>
   );
 }
@@ -53,7 +64,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    maxHeight: 100,
+    maxHeight: 110,
+    minHeight: 42,
     backgroundColor: COLORS.parchment,
     borderRadius: RADIUS.lg,
     paddingHorizontal: SPACING.lg - 2,
@@ -74,10 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  iconBtnRecording: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
-  },
+  iconBtnRecording: { backgroundColor: COLORS.rose, borderColor: COLORS.rose },
   iconText: { fontSize: 18 },
   sendBtn: {
     backgroundColor: COLORS.gold,

@@ -15,6 +15,7 @@ import TranslatorScreen from "./src/screens/TranslatorScreen";
 import VisualSolverScreen from "./src/screens/VisualSolverScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import SahayakLiveScreen from "./src/screens/SahayakLiveScreen";
+import ScamShieldScreen from "./src/screens/ScamShieldScreen";
 import { COLORS, RADIUS } from "./src/constants/theme";
 import { LanguageProvider, useLanguage } from "./src/context/LanguageContext";
 
@@ -40,6 +41,7 @@ function HomeStack() {
       <Stack.Screen name="Translator" component={TranslatorScreen} options={{ title: t("translator") }} />
       <Stack.Screen name="VisualSolver" component={VisualSolverScreen} options={{ title: t("visualSolver") }} />
       <Stack.Screen name="HelpCenters" component={HelpCentersScreen} options={{ title: t("helpCenters") }} />
+      <Stack.Screen name="ScamShield" component={ScamShieldScreen} options={{ title: t("scamShield") }} />
     </Stack.Navigator>
   );
 }

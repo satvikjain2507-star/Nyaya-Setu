@@ -6,6 +6,7 @@ import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatItem, { runLiveCheckForMessage } from "../components/ChatItem";
 import { verifyLive } from "../services/liveIntel";
 import ChatInput from "../components/ChatInput";
+import KeyboardAware from "../components/KeyboardAware";
 import { COLORS } from "../constants/theme";
 import { geminiChat, geminiChatWithAudio } from "../services/geminiApi";
 import { SCHEME_SYSTEM_PROMPT_BASE } from "../data/schemes";
@@ -24,6 +25,8 @@ export default function SchemeNavigatorScreen() {
   const [messages, setMessages] = useState([{ id: "intro", role: "bot", text: t("schemeIntro") }]);
   const [isRecording, setIsRecording] = useState(false);
   const voice = useVoiceRecorder();
+  const listRef = useRef(null);
+  const scrollEnd = useCallback(() => listRef.current?.scrollToEnd({ animated: true }), []);
 
   useEffect(() => {
     (async () => {
@@ -119,7 +122,11 @@ export default function SchemeNavigatorScreen() {
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safe}>
+      <KeyboardAware onShow={scrollEnd}>
       <FlatList
+        ref={listRef}
+        keyboardShouldPersistTaps="handled"
+        onContentSizeChange={scrollEnd}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -134,6 +141,7 @@ export default function SchemeNavigatorScreen() {
         isRecording={isRecording}
         placeholder={t("typeMessage")}
       />
+      </KeyboardAware>
     </SafeAreaView>
   );
 }

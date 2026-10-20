@@ -177,59 +177,62 @@ export async function scamCheck({ content, language = "English" }) {
  * Find real help centres (CSC, DLSA, police, one-stop centre) for the user's city.
  * Returns [{ name, type, address, phone, url }]
  */
-export async function findHelpCentersLive({ city, district, state }) {
+export async function findHelpCentersLive({ city, district, state, locality }) {
   const place = [city || district, state].filter(Boolean).join(", ");
   if (!place) throw new Error("Could not detect your city.");
+  const near = [locality, city || district].filter(Boolean).join(", ");
 
-  return cached(`help_${keyOf(place)}`, 24 * 3600 * 1000, async () => {
+  return cached(`help3_${keyOf(near + "|" + place)}`, 24 * 3600 * 1000, async () => {
     const queries = [
-      `Common Service Centre CSC in ${place} address`,
+      `Common Service Centre CSC ${near} ${state || ""} address phone`,
       `District Legal Services Authority ${district || city} ${state || ""} address phone`,
-      `police station ${city || district} ${state || ""} address phone`,
-      `One Stop Centre Sakhi women help ${district || city} address`,
+      `police station ${near} ${state || ""} address phone`,
+      `One Stop Centre Sakhi women help ${district || city} ${state || ""} address`,
     ];
-    const sets = await Promise.all(queries.map((q) => tinyfishSearch(q, { location: "IN" }).catch(() => [])));
-    const all = sets.flatMap((rs, i) => rs.slice(0, 6).map((r) => ({ ...r, bucket: i })));
+    const sets = await Promise.all(queries.map((q) => tinyfishSearch(q, { location: "IN", purpose: `Find the exact address and phone of real offices near ${near}` }).catch(() => [])));
+    const all = sets.flatMap((rs, i) => rs.slice(0, 7).map((r) => ({ ...r, bucket: i })));
+    if (all.length === 0) return [];
 
     const extracted = await geminiJSON(
-      "You extract real, specific places from web search results. Never invent names, addresses or phone numbers — use only what appears in the results.",
-      `Location: ${place}\n\nLIVE SEARCH RESULTS (TinyFish):\n${all
+      "You extract real, specific physical offices from web search results. Never invent names, addresses or phone numbers — use only what appears in the results.",
+      `User location: ${near}, ${state || ""}\n\nLIVE SEARCH RESULTS (TinyFish):\n${all
         .map((r) => `- [bucket ${r.bucket}] ${r.title} | ${r.snippet || ""} | ${r.url}`)
-        .join("\n")}\n\nBuckets: 0=CSC (scheme applications), 1=DLSA (free legal aid), 2=Police station (FIR), 3=One Stop Centre (women's help).\nReturn JSON: {"centers": [{"name": "", "type": "CSC (Scheme applications) | Legal Aid (DLSA) | Police Station (FIR filing) | One Stop Centre (Women)", "address": "", "phone": "or empty", "url": "source url"}]} — up to 10 entries, only places located in or near ${place}.`
+        .join("\n")}\n\nBuckets: 0=CSC (scheme applications), 1=DLSA (free legal aid), 2=Police station (FIR), 3=One Stop Centre (women's help).\nRULES: Each entry must be ONE specific physical office with a real street/area address taken from the results (e.g. "CSC — Laxmi Nagar", "Shakarpur Police Station", "DLSA East, Karkardooma Courts"). DO NOT return website titles, home pages, directories or lists (e.g. "Welcome to Common Services Centres", "List of CSC", "Homepage | ..."). Skip anything without a usable address. Put the closest to ${near} first.\nReturn JSON: {"centers": [{"name": "", "type": "CSC (Scheme applications) | Legal Aid (DLSA) | Police Station (FIR filing) | One Stop Centre (Women)", "address": "", "phone": "digits only or empty", "url": "source url"}]} — up to 10 entries.`
     );
 
-    let centers = extracted?.centers || [];
-    if (centers.length === 0) {
-      // No Gemini? show the raw official results instead
-      centers = rankOfficialFirst(all)
-        .slice(0, 8)
-        .map((r) => ({ name: r.title, type: ["CSC", "Legal Aid (DLSA)", "Police Station", "One Stop Centre"][r.bucket], address: r.snippet || "", phone: "", url: r.url }));
-    }
+    const JUNK = /welcome|home ?page|^list of|official (web)?site|portal|directory|e-governance services india|\|/i;
+    const centers = (extracted?.centers || []).filter(
+      (c) => c?.name && !JUNK.test(c.name) && c.address && c.address.length > 8 && !/text size|skip to main/i.test(c.address)
+    );
+    // no clean results → empty list; the screen then shows helplines + the offline list instead of raw web titles
     return centers.map((c, i) => ({ ...c, id: `live-${i}`, live: true }));
   });
 }
 
 // ─────────────────────── 4. LIVE UPDATES FEED ───────────────────────
 
-/** Latest scheme / citizen-rights news from the last 7 days. Cached for 6 hours. */
+// Only citizen-useful news: schemes, deadlines, rights, fraud alerts. Never politics, crime or entertainment.
+const NEWS_RELEVANT = /scheme|yojana|pension|subsid|kisan|farmer|scholarship|ayushman|ration|aadhaar|\bpan\b|e-?kyc|insurance|\bloan|mudra|awas|housing|ujjwala|\blpg\b|jan dhan|welfare|benefit|apply|registration|deadline|last date|helpline|fraud|scam|cyber|digital arrest|phishing|\botp\b|\bupi\b|advisory|consumer|legal aid|nalsa|lok adalat|\brti\b|e-shram|labour|senior citizen|women|girl|student|ration card|voter id|passport|driving licen|sanchar saathi|ceir|pib fact/i;
+const NEWS_BLOCK = /election|\bpoll|\bbjp\b|congress|\baap\b|party|opposition|rally|slams|imran|pakistan|protest|\bwar\b|attack|killed|murder|rape|terror|cricket|\bipl\b|bollywood|film|actor|actress|celebrity|stock|sensex|nifty|share price|\bipo\b|crypto|bitcoin|gold price|horoscope|time magazine|voter deletion|citizenship|\bsir\b|upsc|notes|renames?\b.*name/i;
+
+/** Latest scheme / citizen-rights / fraud-alert news from the last 7 days. Cached for 6 hours. */
 export async function getLiveUpdates({ language = "English", force = false } = {}) {
-  const key = `updates_${language}_${new Date().toISOString().slice(0, 10)}`;
+  const key = `updates3_${language}_${new Date().toISOString().slice(0, 10)}`;
   if (force) await AsyncStorage.removeItem(CACHE_PREFIX + key).catch(() => {});
 
   return cached(key, 6 * 3600 * 1000, async () => {
-    const [a, b] = await Promise.all([
-      tinyfishSearch("government scheme India launched OR extended OR deadline citizens", {
-        location: "IN",
-        domainType: "news",
-        recencyMinutes: 7 * 24 * 60,
-      }).catch(() => []),
-      tinyfishSearch("cyber fraud alert India citizens advisory", {
-        location: "IN",
-        domainType: "news",
-        recencyMinutes: 7 * 24 * 60,
-      }).catch(() => []),
+    const week = 7 * 24 * 60;
+    const sets = await Promise.all([
+      tinyfishSearch("government scheme yojana launched apply citizens India", { location: "IN", domainType: "news", recencyMinutes: week }).catch(() => []),
+      tinyfishSearch("scheme deadline extended registration last date India", { location: "IN", domainType: "news", recencyMinutes: week }).catch(() => []),
+      tinyfishSearch("cyber fraud scam alert advisory citizens India", { location: "IN", domainType: "news", recencyMinutes: week }).catch(() => []),
+      tinyfishSearch("scheme yojana citizens", { location: "IN", includeDomains: ["pib.gov.in"], recencyMinutes: week }).catch(() => []),
     ]);
-    let items = rankOfficialFirst([...a.slice(0, 5), ...b.slice(0, 3)]).slice(0, 6);
+    let items = rankOfficialFirst(sets.flat()).filter((x) => x.title && NEWS_RELEVANT.test(`${x.title} ${x.snippet || ""}`) && !NEWS_BLOCK.test(x.title));
+    // keep a mix: at most 4 scheme items + 2 fraud alerts
+    const fraud = items.filter((x) => /fraud|scam|cyber|digital arrest|phishing/i.test(x.title));
+    const rest = items.filter((x) => !fraud.includes(x));
+    items = [...rest.slice(0, 4), ...fraud.slice(0, 2)].slice(0, 6);
     if (items.length === 0) return [];
 
     if (language !== "English") {
@@ -239,7 +242,14 @@ export async function getLiveUpdates({ language = "English", force = false } = {
       );
       if (tr?.titles?.length === items.length) items = items.map((x, i) => ({ ...x, title: tr.titles[i] }));
     }
-    return items.map((x) => ({ title: x.title, url: x.url, site: x.publisher || hostnameOf(x.url), date: x.date || "", official: isOfficialSite(x.url) }));
+    return items.map((x) => ({
+      title: x.title,
+      url: x.url,
+      site: x.publisher || hostnameOf(x.url),
+      date: x.date || "",
+      official: isOfficialSite(x.url),
+      fraud: /fraud|scam|cyber|धोखा|साइबर/i.test(x.title),
+    }));
   });
 }
 

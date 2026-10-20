@@ -114,7 +114,7 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
 
       <View style={styles.timeline}>
         <View style={styles.timelineHead}>
-          <Text style={styles.timelineTitle}>What the agent is doing</Text>
+          <Text style={styles.timelineTitle}>What the agent is doing{steps.length ? ` · step ${steps.length}` : ""}</Text>
           <Text style={styles.timer}>⏱ {secs}s{running ? " · usually 40–60 s" : ""}</Text>
         </View>
         {steps.length === 0 && running && (

@@ -70,6 +70,23 @@ export default function HomeScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
+          {/* Scam Shield */}
+          <TouchableOpacity style={styles.scamCard} onPress={() => navigation.navigate("ScamShield")} activeOpacity={0.9}>
+            <View style={styles.scamIcon}>
+              <Text style={{ fontSize: 24 }}>🛡️</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.scamTitle}>{t("scamShield")}</Text>
+                <View style={styles.newPill}>
+                  <Text style={styles.newPillText}>LIVE</Text>
+                </View>
+              </View>
+              <Text style={styles.scamSub}>{t("scamShieldDesc")}</Text>
+            </View>
+            <Text style={[styles.chevron, { color: COLORS.rose }]}>›</Text>
+          </TouchableOpacity>
+
           {PILLARS.map((p, i) => {
             const a = ACCENTS[i % ACCENTS.length];
             return (
@@ -110,7 +127,7 @@ export default function HomeScreen({ navigation }) {
           {updates?.map((u, i) => (
             <TouchableOpacity key={i} style={styles.feedItem} onPress={() => openLink(u.url)}>
               <Text style={styles.feedItemTitle} numberOfLines={2}>
-                {u.official ? "🏛️ " : "📰 "}
+                {u.fraud ? "🚨 " : u.official ? "🏛️ " : "📰 "}
                 {u.title}
               </Text>
               <Text style={styles.feedMeta}>
@@ -194,6 +211,12 @@ const styles = StyleSheet.create({
   liveSub: { color: "#D9CFE0", fontSize: 13, lineHeight: 19, marginTop: 4 },
   liveCta: { alignSelf: "flex-start", backgroundColor: COLORS.gold, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.lg, paddingVertical: 7, marginTop: SPACING.md },
   liveCtaText: { color: COLORS.inkDeep, fontWeight: "800", fontSize: 13 },
+  scamCard: { flexDirection: "row", alignItems: "center", gap: SPACING.md, backgroundColor: "#FFF5F6", borderRadius: RADIUS.md, padding: SPACING.lg - 2, borderWidth: 1.5, borderColor: COLORS.rose, elevation: 2, shadowColor: COLORS.inkDeep, shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  scamIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.roseSoft, alignItems: "center", justifyContent: "center" },
+  scamTitle: { fontSize: 16, fontWeight: "800", color: COLORS.ink900 },
+  scamSub: { fontSize: 12.5, color: COLORS.ink600, marginTop: 2 },
+  newPill: { backgroundColor: COLORS.rose, borderRadius: RADIUS.pill, paddingHorizontal: 7, paddingVertical: 1 },
+  newPillText: { color: "#fff", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6 },
   feed: { marginHorizontal: SPACING.lg, marginTop: SPACING.xl, backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md + 2 },
   feedHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: SPACING.sm },
   feedTitle: { fontWeight: "800", fontSize: 13, color: COLORS.ink, textTransform: "uppercase", letterSpacing: 0.6 },

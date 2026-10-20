@@ -1,22 +1,30 @@
 import axios from "axios";
+import { scriptOf } from "../utils/language";
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const MODEL = "gemini-3.5-flash-lite";
-const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// used only if the main model stays overloaded after all retries
+const FALLBACK_MODEL = "gemini-flash-latest";
+const urlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+const RETRY_DELAYS = [1200, 2500, 5000];
+
+/** Friendly message shown when the AI service can't be reached (never a raw error code). */
+export const AI_BUSY = "The AI assistant is very busy right now. Please tap Send again in a few seconds — your message is safe.";
+export const isAiBusy = (text) => typeof text === "string" && text === AI_BUSY;
 
 const hasKey = () => Boolean(GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_api_key_here");
 
 export const hasGeminiKey = hasKey;
 
 async function callGemini(systemPrompt, parts, opts = {}, attempt = 0) {
-  const { json = false, maxOutputTokens = 2048, timeout = 30000 } = opts;
+  const { json = false, maxOutputTokens = 2048, timeout = 30000, model = MODEL } = opts;
   if (!hasKey()) {
     return json ? null : mockReply(systemPrompt);
   }
 
   try {
     const response = await axios.post(
-      `${BASE_URL}?key=${GEMINI_API_KEY}`,
+      `${urlFor(model)}?key=${GEMINI_API_KEY}`,
       {
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts }],
@@ -34,15 +42,19 @@ async function callGemini(systemPrompt, parts, opts = {}, attempt = 0) {
     return text || "Sorry, I couldn't generate a reply. Please try again.";
   } catch (err) {
     const status = err?.response?.status;
-    // 503 = Google's servers are temporarily overloaded, 429 = rate limit: wait and retry (up to 3 tries)
-    if ([429, 500, 502, 503, 504].includes(status) && attempt < 2) {
-      await new Promise((r) => setTimeout(r, attempt === 0 ? 1500 : 4000));
+    const retryable = [429, 500, 502, 503, 504].includes(status) || !status; // !status = timeout / network blip
+    // overloaded / rate-limited / network blip: wait and retry with back-off
+    if (retryable && attempt < RETRY_DELAYS.length) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
       return callGemini(systemPrompt, parts, opts, attempt + 1);
     }
-    // warn (not error) so dev builds don't show a red toast; the app already falls back gracefully
-    console.warn("Gemini unavailable:", status, err?.response?.data?.error?.message || err.message);
+    // still overloaded: try the backup model once
+    if (retryable && model !== FALLBACK_MODEL && status) {
+      return callGemini(systemPrompt, parts, { ...opts, model: FALLBACK_MODEL }, RETRY_DELAYS.length);
+    }
+    console.log("Gemini unavailable:", status, err?.response?.data?.error?.message || err.message);
     if (json) return null;
-    return "Sorry, I couldn't reach the AI service right now. Please check your API key and internet connection, and try again.";
+    return AI_BUSY;
   }
 }
 
@@ -81,7 +93,7 @@ export async function geminiTranscribe(audioBase64, mimeType = "audio/m4a") {
     ],
     { maxOutputTokens: 512, timeout: 60000 }
   );
-  if (!text || text.startsWith("Sorry, I couldn't")) return "";
+  if (!text || isAiBusy(text)) return "";
   return text.replace(/^["']|["']$/g, "");
 }
 
@@ -162,4 +174,28 @@ function mockReply(systemPrompt) {
     return "Summary: This looks like a municipal property tax notice. (1) An amount is due for this financial year. (2) Payment deadline is within 30 days. (3) Late payment may attract a penalty. (Demo mode — add your API key for real document reading.)";
   }
   return "(demo mode — add EXPO_PUBLIC_GEMINI_API_KEY to .env for real responses)";
+}
+
+// ───────────── Translation between any of the 13 supported languages ─────────────
+
+/** Translate text. `from` may be null (auto-detect). Returns only the translation. */
+export async function geminiTranslate(text, from, to) {
+  const src = from ? `from ${from}` : "from whatever language it is written in (detect it automatically)";
+  const prompt = `Translate the text below ${src} into ${to}. Write the translation ONLY in the ${scriptOf(to)} script. Keep names, numbers, amounts and website addresses unchanged. Use simple, natural, everyday ${to}. Reply with ONLY the translation — no quotes, no notes, no transliteration.\n\nText: ${text}`;
+  const out = await callGemini("You are a precise, natural translator for Indian languages.", [{ text: prompt }]);
+  return typeof out === "string" ? out.replace(/^["']|["']$/g, "").trim() : out;
+}
+
+/** Translate a voice note. Returns { said, translation }. */
+export async function geminiTranslateVoice(audioBase64, from, to, mimeType = "audio/m4a") {
+  const src = from ? `It is spoken in ${from}.` : "Detect the spoken language automatically.";
+  const prompt = `This audio is a person speaking. ${src} First write exactly "SAID:" followed by the transcription in the original language and its native script. Then on a new line write exactly "TRANSLATION:" followed by the ${to} translation written only in the ${scriptOf(to)} script. Nothing else.`;
+  const reply = await callGemini("You are a precise speech translator for Indian languages.", [
+    { text: prompt },
+    { inline_data: { mime_type: mimeType, data: audioBase64 } },
+  ]);
+  if (isAiBusy(reply)) return { said: "", translation: reply };
+  const said = (reply.split(/TRANSLATION:/i)[0] || "").replace(/SAID:/i, "").trim();
+  const translation = (reply.split(/TRANSLATION:/i)[1] || reply).trim();
+  return { said, translation };
 }
