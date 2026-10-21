@@ -16,6 +16,16 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
+    speakNow: "Tap and speak your problem",
+    speakNowSub: "Any of 13 Indian languages — no typing needed",
+    checkNow: "Check now",
+    helpCentersHomeDesc: "CSC, free legal aid, police & women's help centres near you — call or get directions",
+    findNearMe: "Find near me",
+    helplinesOneTap: "Helplines — one tap to call",
+    moreTools: "More tools",
+    allTypes: "All",
+    openInMaps: "Open in Maps",
+    nearestOnMap: "Nearest on the map",
     whoCanApply: "Who can apply",
     documentsNeeded: "Documents needed",
     scamShield: "Scam Shield",
@@ -79,6 +89,16 @@ export const STRINGS = {
     findingRealCentres: "Finding real help centres in",
   },
   hi: {
+    speakNow: "टैप करें और अपनी समस्या बोलें",
+    speakNowSub: "13 भारतीय भाषाओं में — टाइप करने की ज़रूरत नहीं",
+    checkNow: "अभी जाँचें",
+    helpCentersHomeDesc: "आपके पास CSC, मुफ़्त कानूनी सहायता, पुलिस और महिला सहायता केंद्र — कॉल करें या रास्ता देखें",
+    findNearMe: "पास में खोजें",
+    helplinesOneTap: "हेल्पलाइन — एक टैप में कॉल",
+    moreTools: "और सुविधाएँ",
+    allTypes: "सभी",
+    openInMaps: "मैप में खोलें",
+    nearestOnMap: "मैप पर सबसे नज़दीकी",
     whoCanApply: "कौन आवेदन कर सकता है",
     documentsNeeded: "ज़रूरी दस्तावेज़",
     scamShield: "स्कैम शील्ड",

@@ -7,3 +7,4 @@ dist/
 *.aab
 .DS_Store
 _backup_before_fix/
+scripts/selftest-report.json
