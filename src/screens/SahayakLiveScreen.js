@@ -24,9 +24,9 @@ import { hasTinyFishKey } from "../services/tinyfishApi";
 
 const SUGGESTIONS = [
   { icon: "🌾", text: "Am I eligible for PM-KISAN? What documents do I need?" },
+  { icon: "📱", text: "My phone was stolen today. How do I block it?" },
   { icon: "🏥", text: "How can my 72-year-old father get an Ayushman card?" },
   { icon: "🎓", text: "Scholarships for a girl student in class 11 from a poor family" },
-  { icon: "📱", text: "My phone was stolen today. How do I block it?" },
   { icon: "🚨", text: "How do I report a UPI fraud online?" },
   { icon: "📄", text: "How to file an RTI application online" },
   { icon: "🛂", text: "How do I apply for a passport?" },
