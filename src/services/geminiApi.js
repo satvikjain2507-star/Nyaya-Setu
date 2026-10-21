@@ -8,7 +8,8 @@ const KEYS = [process.env.EXPO_PUBLIC_GEMINI_API_KEY, process.env.EXPO_PUBLIC_GE
 // Every model has its OWN free-tier quota. If one is rate-limited or used up for the day,
 // the app silently moves to the next one, so a busy model never breaks a feature.
 // Always tried in this order: the main model (500 requests/day on your free tier) first, backups only if it fails.
-const MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
+// gemini-2.5-* were retired for new users (404, tested 22 Oct 2026) — removed.
+const MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-3.8-flash"];
 const urlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const cooldownUntil = new Map(); // "keyIndex|model" -> time it may be used again

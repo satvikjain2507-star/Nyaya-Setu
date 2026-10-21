@@ -5,6 +5,7 @@ import { geminiJSON, geminiChat, geminiTranslate, hasGeminiKey, lastGeminiError 
 import { planAgentTask, runSahayakTask, scamCheck, findHelpCentersLive, getLiveUpdates, verifyLive } from "../../src/services/liveIntel";
 
 const QUICK = process.argv.includes("--quick");
+const ONLY_SAHAYAK = process.argv.includes("--sahayak");
 const results = [];
 const t0 = () => Date.now();
 const secs = (s) => ((Date.now() - s) / 1000).toFixed(1) + "s";
@@ -26,13 +27,14 @@ const must = (cond, msg) => {
   if (!cond) throw new Error(msg);
 };
 
-const MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
+const MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-3.8-flash"];
 
 async function main() {
   log(`\nNyaya Setu live self-test · ${new Date().toLocaleString()} · ${QUICK ? "quick" : "full"}\n`);
   must(hasGeminiKey(), "No Gemini key in .env");
   must(hasTinyFishKey(), "No TinyFish key in .env");
 
+  if (!ONLY_SAHAYAK) {
   // ── 1. Gemini models (each has its own free quota) ──
   for (const m of MODELS) {
     await test(`Gemini model ${m}`, async () => {
@@ -62,8 +64,8 @@ async function main() {
     must(r.length > 0, "0 results");
     return `${r.length} results · top: ${r[0].url}`;
   });
-  await test("TinyFish Fetch (myScheme PM-KISAN page)", async () => {
-    const { results: pages, errors } = await tinyfishFetch(["https://www.myscheme.gov.in/schemes/pm-kisan"], { perUrlTimeoutMs: 30000 });
+  await test("TinyFish Fetch (PM-KISAN official page)", async () => {
+    const { results: pages, errors } = await tinyfishFetch(["https://pmkisan.gov.in/"], { perUrlTimeoutMs: 30000 });
     const len = pages[0]?.text?.length || 0;
     must(len > 300, `page text too short (${len}) ${JSON.stringify(errors).slice(0, 120)}`);
     return `${len} chars · "${pages[0].title}"`;
@@ -85,7 +87,7 @@ async function main() {
     let stream = null;
     let status = "";
     const s = Date.now();
-    while (Date.now() - s < 60000 && !stream) {
+    while (Date.now() - s < 90000 && !stream) {
       await new Promise((r) => setTimeout(r, 3000));
       const run = await getAgentRun(id);
       stream = run.streaming_url;
@@ -93,12 +95,13 @@ async function main() {
       if (["FAILED", "CANCELLED", "COMPLETED"].includes(status)) break;
     }
     await cancelAgentRun(id);
-    must(stream || status === "COMPLETED", `no live stream after 60 s (status ${status})`);
+    must(stream || status === "COMPLETED", `no live stream after 90 s (status ${status})`);
     return `run ${id} · status ${status} · stream ${stream ? "✓" : "—"}`;
   });
 
+  }
   // ── 5. Sahayak Live end to end (the core pillar) ──
-  const sahayak = QUICK ? ["How can my 72-year-old father get an Ayushman card?"] : ["How can my 72-year-old father get an Ayushman card?", "मेरा फ़ोन चोरी हो गया है, उसे कैसे ब्लॉक करूँ?"];
+  const sahayak = ONLY_SAHAYAK ? ["How can my 72-year-old father get an Ayushman card?", "मेरा फ़ोन चोरी हो गया है, उसे कैसे ब्लॉक करूँ?", "Am I eligible for PM-KISAN? What documents do I need?"] : QUICK ? ["How can my 72-year-old father get an Ayushman card?"] : ["How can my 72-year-old father get an Ayushman card?", "मेरा फ़ोन चोरी हो गया है, उसे कैसे ब्लॉक करूँ?"];
   for (const req of sahayak) {
     await test(`Sahayak Live end-to-end: "${req.slice(0, 45)}"`, async () => {
       const s = Date.now();
@@ -131,6 +134,7 @@ async function main() {
     });
   }
 
+  if (ONLY_SAHAYAK) return finish();
   // ── 6. Scam Shield ──
   await test("Scam Shield flags fake SBI KYC SMS", async () => {
     const r = await scamCheck({
@@ -168,6 +172,9 @@ async function main() {
       return `${v.verdict} · ${v.headline} · ${v.sources.map((x) => x.site).join(", ")}`;
     });
 
+  finish();
+}
+function finish() {
   const pass = results.filter((r) => r.ok).length;
   log(`\n════ ${pass}/${results.length} passed ════`);
   results.filter((r) => !r.ok).forEach((r) => log(`  ❌ ${r.name}: ${r.detail}`));

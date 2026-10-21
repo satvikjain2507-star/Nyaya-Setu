@@ -1,0 +1,131 @@
+{
+  "at": "2026-10-21T19:17:47.773Z",
+  "results": [
+    {
+      "name": "Gemini model gemini-3.5-flash-lite",
+      "ok": true,
+      "time": "1.3s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-flash-lite-latest",
+      "ok": true,
+      "time": "1.1s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-3-flash-preview",
+      "ok": true,
+      "time": "1.7s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-2.5-flash-lite",
+      "ok": false,
+      "time": "0.4s",
+      "detail": "HTTP 404 This model models/gemini-2.5-flash-lite is no longer available to new users. Please update your code to use models/gemini-3.5-flash-lite for the latest"
+    },
+    {
+      "name": "Gemini model gemini-flash-latest",
+      "ok": true,
+      "time": "17.3s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-2.5-flash",
+      "ok": false,
+      "time": "0.4s",
+      "detail": "HTTP 404 This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features "
+    },
+    {
+      "name": "Gemini JSON mode (app client with failover)",
+      "ok": true,
+      "time": "0.9s",
+      "detail": "{\"ok\":true,\"lang\":\"pani\"}"
+    },
+    {
+      "name": "Gemini translate English → Tamil",
+      "ok": true,
+      "time": "1.0s",
+      "detail": "உங்கள் ஆயுஷ்மான் அட்டை தயார்."
+    },
+    {
+      "name": "TinyFish Search (India, official first)",
+      "ok": true,
+      "time": "2.7s",
+      "detail": "10 results · top: https://pmkisan.gov.in/RegistrationFormupdated.aspx"
+    },
+    {
+      "name": "TinyFish Fetch (myScheme PM-KISAN page)",
+      "ok": false,
+      "time": "6.8s",
+      "detail": "page text too short (219) []"
+    },
+    {
+      "name": "Gemini plans agent task: \"मेरे पिता 72 साल के हैं, उनका आयुष्मान क\"",
+      "ok": true,
+      "time": "1.2s",
+      "detail": "myScheme → https://www.myscheme.gov.in/schemes/ab-pmjay · search: \"Ayushman Bharat PM JAY scheme details eligibility senior citizens 70 plus myScheme\""
+    },
+    {
+      "name": "Gemini plans agent task: \"My phone was stolen today. How do I bloc\"",
+      "ok": true,
+      "time": "1.3s",
+      "detail": "Sanchar Saathi (CEIR) → https://www.sancharsaathi.gov.in · search: \"block lost stolen mobile phone CEIR Sanchar Saathi\""
+    },
+    {
+      "name": "Gemini plans agent task: \"How to file an RTI application online\"",
+      "ok": true,
+      "time": "1.5s",
+      "detail": "RTI Online → https://rtionline.gov.in · search: \"file RTI online India portal\""
+    },
+    {
+      "name": "TinyFish Agent run starts + live stream URL",
+      "ok": false,
+      "time": "66.0s",
+      "detail": "no live stream after 60 s (status PENDING)"
+    },
+    {
+      "name": "Sahayak Live end-to-end: \"How can my 72-year-old father get an Ayushman\"",
+      "ok": true,
+      "time": "279.3s",
+      "detail": "mode=search instant=1.7s quick=24.7s total=279.3s stream=true steps=31 cross=confirmed"
+    },
+    {
+      "name": "Sahayak Live end-to-end: \"मेरा फ़ोन चोरी हो गया है, उसे कैसे ब्लॉक करूँ\"",
+      "ok": true,
+      "time": "174.5s",
+      "detail": "mode=agent instant=1.8s quick=25.8s total=174.5s stream=true steps=23 cross=confirmed"
+    },
+    {
+      "name": "Scam Shield flags fake SBI KYC SMS",
+      "ok": true,
+      "time": "7.2s",
+      "detail": "likely_scam · This message is a fake SBI account blocking scam. · sources 4"
+    },
+    {
+      "name": "Scam Shield keeps genuine message calm",
+      "ok": true,
+      "time": "7.1s",
+      "detail": "likely_genuine · This message looks safe and uses the real official website."
+    },
+    {
+      "name": "Help Centres live (Laxmi Nagar, East Delhi)",
+      "ok": true,
+      "time": "4.4s",
+      "detail": "8 centres (CSC, Legal Aid, Police Station) · e.g. csc.pdf — Telephone Exchange Building Tel : 27162000 LAXMI NAGAR Laxmi Nagar Exchange Ground Floor Tel : 22512400 1. Tel : 22280039. Building Tel : 26969300 1."
+    },
+    {
+      "name": "Live updates feed (last 7 days)",
+      "ok": true,
+      "time": "5.3s",
+      "detail": "6 items · Government to Stay Live on Mobile: Shri Shivraj Singh Chouhan Launches New Portal for Farmers"
+    },
+    {
+      "name": "Verify Live (scheme answer vs official pages)",
+      "ok": true,
+      "time": "7.9s",
+      "detail": "confirmed · PM-KISAN gives farmers Rs 6,000 every year · pmkisan.gov.in, kisansuvidha.gov.in, digitalindia.gov.in, pib.gov.in"
+    }
+  ]
+}
