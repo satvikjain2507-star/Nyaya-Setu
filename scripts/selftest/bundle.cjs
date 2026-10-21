@@ -17934,7 +17934,7 @@ function languageRule(language = "English") {
 var KEYS = [process.env.EXPO_PUBLIC_GEMINI_API_KEY, process.env.EXPO_PUBLIC_GEMINI_API_KEY_2, process.env.EXPO_PUBLIC_GEMINI_API_KEY_3].filter(
   (k) => k && k !== "your_gemini_api_key_here"
 );
-var MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
+var MODELS = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-3.8-flash"];
 var urlFor = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 var cooldownUntil = /* @__PURE__ */ new Map();
 var missingModels = /* @__PURE__ */ new Set();
@@ -18236,7 +18236,7 @@ Buckets: 0=CSC (scheme applications), 1=DLSA (free legal aid), 2=Police station 
 RULES: Each entry must be ONE specific physical office with a real street/area address taken from the results (e.g. "CSC \u2014 Laxmi Nagar", "Shakarpur Police Station", "DLSA East, Karkardooma Courts"). DO NOT return website titles, home pages, directories or lists (e.g. "Welcome to Common Services Centres", "List of CSC", "Homepage | ..."). Skip anything without a usable address. Put the closest to ${near} first.
 Return JSON: {"centers": [{"name": "", "type": "CSC (Scheme applications) | Legal Aid (DLSA) | Police Station (FIR filing) | One Stop Centre (Women)", "address": "", "phone": "digits only or empty", "url": "source url"}]} \u2014 up to 10 entries.`
     );
-    const JUNK = /welcome|home ?page|^list of|official (web)?site|portal|directory|e-governance services india|\|/i;
+    const JUNK = /welcome|home ?page|^list of|official (web)?site|portal|directory|e-governance services india|\||\.(pdf|docx?|xlsx?|aspx?|php|html?)\b|^https?:/i;
     const centers = (extracted?.centers || []).filter(
       (c) => c?.name && !JUNK.test(c.name) && c.address && c.address.length > 8 && !/text size|skip to main/i.test(c.address)
     );
@@ -18258,7 +18258,7 @@ function heuristicCenters(all3, placeWords = []) {
     const hay = `${r.title} ${snippet}`.toLowerCase();
     if (words.length && !words.some((w) => hay.includes(w))) continue;
     const name = String(r.title || "").split(/ [|\-–:] |, /)[0].trim();
-    if (!name || name.length < 4 || /welcome|home ?page|^list of|^top |^popular |^best |directory|near me|^find |^know |^driving directions|^get directions|centers in|centres in|^police in |services in |^one stop centres?$|^a day |blog|article/i.test(name)) continue;
+    if (!name || name.length < 4 || /\.(pdf|docx?|xlsx?|aspx?|php|html?)$/i.test(name) || /welcome|home ?page|^list of|^top |^popular |^best |directory|near me|^find |^know |^driving directions|^get directions|centers in|centres in|^police in |services in |^one stop centres?$|^a day |blog|article/i.test(name)) continue;
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -18397,11 +18397,11 @@ function buildGoal({ request, plan, url: url2 }) {
   const deep = isDeepPage(url2);
   return [
     `Citizen's task: "${plan.taskTitle}". They need: ${plan.focus}. (Original request: "${String(request).slice(0, 200)}")`,
-    "The citizen is WATCHING you browse live, so browse the official website naturally and thoroughly, like a helpful person doing this for them.",
+    "The citizen is WATCHING you live and waiting, so be FAST and focused: finish in about 10 actions or fewer. Do not explore unrelated pages.",
     deep ? "You are on the official page for this task." : `You are on the official website's home page. Suggested route: ${plan.steps || "use the site search or menu to open the most relevant page."}`,
     "1. If a pop-up, cookie banner or language selector appears, close it.",
-    "2. Read the whole page, scrolling down through it. Open each relevant section or tab (Details, Benefits, Eligibility, Exclusions, Application Process, Documents Required, FAQ) and read it.",
-    "3. Then follow the official link to where the citizen applies or acts (for example the scheme's own portal or the 'Apply' page) and read that page too, to confirm how and where to apply. You may open other relevant pages on official government websites if they help answer the task.",
+    "2. Scroll through this page and open only the sections that answer the task (Benefits, Eligibility, Documents Required, Application Process). Skip FAQs and unrelated tabs.",
+    "3. Open ONE more official page only if the documents or how-to-apply steps are missing here. As soon as you have eligibility, documents and how to apply, stop and return the answer.",
     "4. Never log in, never type personal details, never submit forms, never pay, and never leave official .gov.in / .nic.in websites.",
     "Copy the Documents Required list exactly as written on the official page.",
     'Return JSON with keys "title", "summary", "eligibility", "benefits", "documents" (array), "steps" (array of how to apply / what to do), "fees" (if shown), "helpline" (if shown), "official_link" (the official URL where the citizen should apply or act).',
@@ -18518,7 +18518,7 @@ async function runSahayakTask({ request, language = "English", onPlan, onUpdate,
   stage("find", "done", candidates[0] ? hostnameOf(candidates[0]) : "");
   stage("browse", "active");
   const started = Date.now();
-  const TOTAL_BUDGET = 27e4;
+  const TOTAL_BUDGET = 15e4;
   let history = [];
   let agentRaw = null;
   let usedUrl = candidates[0];
@@ -18606,6 +18606,7 @@ async function runSahayakTask({ request, language = "English", onPlan, onUpdate,
 
 // selftest/tests.js
 var QUICK = process.argv.includes("--quick");
+var ONLY_SAHAYAK = process.argv.includes("--sahayak");
 var results = [];
 var t0 = () => Date.now();
 var secs = (s) => ((Date.now() - s) / 1e3).toFixed(1) + "s";
@@ -18626,70 +18627,72 @@ async function test2(name, fn) {
 var must = (cond, msg) => {
   if (!cond) throw new Error(msg);
 };
-var MODELS2 = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"];
+var MODELS2 = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-3.8-flash"];
 async function main() {
   log(`
 Nyaya Setu live self-test \xB7 ${(/* @__PURE__ */ new Date()).toLocaleString()} \xB7 ${QUICK ? "quick" : "full"}
 `);
   must(hasGeminiKey(), "No Gemini key in .env");
   must(hasTinyFishKey(), "No TinyFish key in .env");
-  for (const m of MODELS2) {
-    await test2(`Gemini model ${m}`, async () => {
-      const r = await axios_default.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${process.env.EXPO_PUBLIC_GEMINI_API_KEY}`,
-        { contents: [{ parts: [{ text: "Reply with the single word OK" }] }] },
-        { timeout: 3e4, validateStatus: () => true }
-      );
-      must(r.status === 200, `HTTP ${r.status} ${r.data?.error?.message || ""}`.slice(0, 160));
-      return r.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    });
-  }
-  await test2("Gemini JSON mode (app client with failover)", async () => {
-    const j = await geminiJSON("Return JSON only.", 'Return {"ok": true, "lang": "Hindi word for water"}');
-    must(j?.ok === true, `bad JSON reply (${lastGeminiError})`);
-    return JSON.stringify(j);
-  });
-  await test2("Gemini translate English \u2192 Tamil", async () => {
-    const out = await geminiTranslate("Your Ayushman card is ready.", "English", "Tamil");
-    must(/[஀-௿]/.test(out), `not Tamil script: ${out}`);
-    return out;
-  });
-  await test2("TinyFish Search (India, official first)", async () => {
-    const r = await tinyfishSearch("PM-KISAN eligibility documents", { location: "IN" });
-    must(r.length > 0, "0 results");
-    return `${r.length} results \xB7 top: ${r[0].url}`;
-  });
-  await test2("TinyFish Fetch (myScheme PM-KISAN page)", async () => {
-    const { results: pages, errors } = await tinyfishFetch(["https://www.myscheme.gov.in/schemes/pm-kisan"], { perUrlTimeoutMs: 3e4 });
-    const len = pages[0]?.text?.length || 0;
-    must(len > 300, `page text too short (${len}) ${JSON.stringify(errors).slice(0, 120)}`);
-    return `${len} chars \xB7 "${pages[0].title}"`;
-  });
-  for (const req of ["\u092E\u0947\u0930\u0947 \u092A\u093F\u0924\u093E 72 \u0938\u093E\u0932 \u0915\u0947 \u0939\u0948\u0902, \u0909\u0928\u0915\u093E \u0906\u092F\u0941\u0937\u094D\u092E\u093E\u0928 \u0915\u093E\u0930\u094D\u0921 \u0915\u0948\u0938\u0947 \u092C\u0928\u0947\u0917\u093E?", "My phone was stolen today. How do I block it?", "How to file an RTI application online"]) {
-    await test2(`Gemini plans agent task: "${req.slice(0, 40)}"`, async () => {
-      const p = await planAgentTask({ request: req });
-      must(p?.url?.startsWith("https://"), "no start URL");
-      must(!/pmjay\.gov\.in|cybercrime\.gov\.in|nfsa\.gov\.in/.test(p.url), `planned a blocked site ${p.url}`);
-      return `${p.siteName} \u2192 ${p.url} \xB7 search: "${p.searchQuery}"`;
-    });
-  }
-  await test2("TinyFish Agent run starts + live stream URL", async () => {
-    const id = await startAgentRun({ url: "https://www.myscheme.gov.in/schemes/pm-kisan", goal: 'Read the Eligibility section and return JSON {"eligibility": "..."}' });
-    let stream4 = null;
-    let status = "";
-    const s = Date.now();
-    while (Date.now() - s < 6e4 && !stream4) {
-      await new Promise((r) => setTimeout(r, 3e3));
-      const run = await getAgentRun(id);
-      stream4 = run.streaming_url;
-      status = run.status;
-      if (["FAILED", "CANCELLED", "COMPLETED"].includes(status)) break;
+  if (!ONLY_SAHAYAK) {
+    for (const m of MODELS2) {
+      await test2(`Gemini model ${m}`, async () => {
+        const r = await axios_default.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${process.env.EXPO_PUBLIC_GEMINI_API_KEY}`,
+          { contents: [{ parts: [{ text: "Reply with the single word OK" }] }] },
+          { timeout: 3e4, validateStatus: () => true }
+        );
+        must(r.status === 200, `HTTP ${r.status} ${r.data?.error?.message || ""}`.slice(0, 160));
+        return r.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      });
     }
-    await cancelAgentRun(id);
-    must(stream4 || status === "COMPLETED", `no live stream after 60 s (status ${status})`);
-    return `run ${id} \xB7 status ${status} \xB7 stream ${stream4 ? "\u2713" : "\u2014"}`;
-  });
-  const sahayak = QUICK ? ["How can my 72-year-old father get an Ayushman card?"] : ["How can my 72-year-old father get an Ayushman card?", "\u092E\u0947\u0930\u093E \u092B\u093C\u094B\u0928 \u091A\u094B\u0930\u0940 \u0939\u094B \u0917\u092F\u093E \u0939\u0948, \u0909\u0938\u0947 \u0915\u0948\u0938\u0947 \u092C\u094D\u0932\u0949\u0915 \u0915\u0930\u0942\u0901?"];
+    await test2("Gemini JSON mode (app client with failover)", async () => {
+      const j = await geminiJSON("Return JSON only.", 'Return {"ok": true, "lang": "Hindi word for water"}');
+      must(j?.ok === true, `bad JSON reply (${lastGeminiError})`);
+      return JSON.stringify(j);
+    });
+    await test2("Gemini translate English \u2192 Tamil", async () => {
+      const out = await geminiTranslate("Your Ayushman card is ready.", "English", "Tamil");
+      must(/[஀-௿]/.test(out), `not Tamil script: ${out}`);
+      return out;
+    });
+    await test2("TinyFish Search (India, official first)", async () => {
+      const r = await tinyfishSearch("PM-KISAN eligibility documents", { location: "IN" });
+      must(r.length > 0, "0 results");
+      return `${r.length} results \xB7 top: ${r[0].url}`;
+    });
+    await test2("TinyFish Fetch (PM-KISAN official page)", async () => {
+      const { results: pages, errors } = await tinyfishFetch(["https://pmkisan.gov.in/"], { perUrlTimeoutMs: 3e4 });
+      const len = pages[0]?.text?.length || 0;
+      must(len > 300, `page text too short (${len}) ${JSON.stringify(errors).slice(0, 120)}`);
+      return `${len} chars \xB7 "${pages[0].title}"`;
+    });
+    for (const req of ["\u092E\u0947\u0930\u0947 \u092A\u093F\u0924\u093E 72 \u0938\u093E\u0932 \u0915\u0947 \u0939\u0948\u0902, \u0909\u0928\u0915\u093E \u0906\u092F\u0941\u0937\u094D\u092E\u093E\u0928 \u0915\u093E\u0930\u094D\u0921 \u0915\u0948\u0938\u0947 \u092C\u0928\u0947\u0917\u093E?", "My phone was stolen today. How do I block it?", "How to file an RTI application online"]) {
+      await test2(`Gemini plans agent task: "${req.slice(0, 40)}"`, async () => {
+        const p = await planAgentTask({ request: req });
+        must(p?.url?.startsWith("https://"), "no start URL");
+        must(!/pmjay\.gov\.in|cybercrime\.gov\.in|nfsa\.gov\.in/.test(p.url), `planned a blocked site ${p.url}`);
+        return `${p.siteName} \u2192 ${p.url} \xB7 search: "${p.searchQuery}"`;
+      });
+    }
+    await test2("TinyFish Agent run starts + live stream URL", async () => {
+      const id = await startAgentRun({ url: "https://www.myscheme.gov.in/schemes/pm-kisan", goal: 'Read the Eligibility section and return JSON {"eligibility": "..."}' });
+      let stream4 = null;
+      let status = "";
+      const s = Date.now();
+      while (Date.now() - s < 9e4 && !stream4) {
+        await new Promise((r) => setTimeout(r, 3e3));
+        const run = await getAgentRun(id);
+        stream4 = run.streaming_url;
+        status = run.status;
+        if (["FAILED", "CANCELLED", "COMPLETED"].includes(status)) break;
+      }
+      await cancelAgentRun(id);
+      must(stream4 || status === "COMPLETED", `no live stream after 90 s (status ${status})`);
+      return `run ${id} \xB7 status ${status} \xB7 stream ${stream4 ? "\u2713" : "\u2014"}`;
+    });
+  }
+  const sahayak = ONLY_SAHAYAK ? ["How can my 72-year-old father get an Ayushman card?", "\u092E\u0947\u0930\u093E \u092B\u093C\u094B\u0928 \u091A\u094B\u0930\u0940 \u0939\u094B \u0917\u092F\u093E \u0939\u0948, \u0909\u0938\u0947 \u0915\u0948\u0938\u0947 \u092C\u094D\u0932\u0949\u0915 \u0915\u0930\u0942\u0901?", "Am I eligible for PM-KISAN? What documents do I need?"] : QUICK ? ["How can my 72-year-old father get an Ayushman card?"] : ["How can my 72-year-old father get an Ayushman card?", "\u092E\u0947\u0930\u093E \u092B\u093C\u094B\u0928 \u091A\u094B\u0930\u0940 \u0939\u094B \u0917\u092F\u093E \u0939\u0948, \u0909\u0938\u0947 \u0915\u0948\u0938\u0947 \u092C\u094D\u0932\u0949\u0915 \u0915\u0930\u0942\u0901?"];
   for (const req of sahayak) {
     await test2(`Sahayak Live end-to-end: "${req.slice(0, 45)}"`, async () => {
       const s = Date.now();
@@ -18721,6 +18724,7 @@ Nyaya Setu live self-test \xB7 ${(/* @__PURE__ */ new Date()).toLocaleString()} 
       return `mode=${res.mode} instant=${marks.instant} quick=${marks.quick} total=${secs(s)} stream=${stream4} steps=${maxSteps} cross=${res.crossCheck?.status || "-"}`;
     });
   }
+  if (ONLY_SAHAYAK) return finish();
   await test2("Scam Shield flags fake SBI KYC SMS", async () => {
     const r = await scamCheck({
       content: "\u092A\u094D\u0930\u093F\u092F \u0917\u094D\u0930\u093E\u0939\u0915, \u0906\u092A\u0915\u093E SBI \u0916\u093E\u0924\u093E \u0906\u091C \u0930\u093E\u0924 12 \u092C\u091C\u0947 \u092C\u094D\u0932\u0949\u0915 \u0939\u094B \u091C\u093E\u090F\u0917\u093E \u0915\u094D\u092F\u094B\u0902\u0915\u093F KYC \u0905\u092A\u0921\u0947\u091F \u0928\u0939\u0940\u0902 \u0939\u0948\u0964 \u0924\u0941\u0930\u0902\u0924 \u0907\u0938 link \u092A\u0930 KYC \u0915\u0930\u0947\u0902: http://sbi-kyc-verify.in/update \u0914\u0930 OTP \u0936\u0947\u092F\u0930 \u0915\u0930\u0947\u0902\u0964 Helpline 9123456780",
@@ -18752,6 +18756,9 @@ Nyaya Setu live self-test \xB7 ${(/* @__PURE__ */ new Date()).toLocaleString()} 
       must(v.sources.length > 0, "no sources");
       return `${v.verdict} \xB7 ${v.headline} \xB7 ${v.sources.map((x) => x.site).join(", ")}`;
     });
+  finish();
+}
+function finish() {
   const pass = results.filter((r) => r.ok).length;
   log(`
 \u2550\u2550\u2550\u2550 ${pass}/${results.length} passed \u2550\u2550\u2550\u2550`);

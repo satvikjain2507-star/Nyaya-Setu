@@ -201,7 +201,7 @@ export async function findHelpCentersLive({ city, district, state, locality }) {
         .join("\n")}\n\nBuckets: 0=CSC (scheme applications), 1=DLSA (free legal aid), 2=Police station (FIR), 3=One Stop Centre (women's help).\nRULES: Each entry must be ONE specific physical office with a real street/area address taken from the results (e.g. "CSC — Laxmi Nagar", "Shakarpur Police Station", "DLSA East, Karkardooma Courts"). DO NOT return website titles, home pages, directories or lists (e.g. "Welcome to Common Services Centres", "List of CSC", "Homepage | ..."). Skip anything without a usable address. Put the closest to ${near} first.\nReturn JSON: {"centers": [{"name": "", "type": "CSC (Scheme applications) | Legal Aid (DLSA) | Police Station (FIR filing) | One Stop Centre (Women)", "address": "", "phone": "digits only or empty", "url": "source url"}]} — up to 10 entries.`
     );
 
-    const JUNK = /welcome|home ?page|^list of|official (web)?site|portal|directory|e-governance services india|\|/i;
+    const JUNK = /welcome|home ?page|^list of|official (web)?site|portal|directory|e-governance services india|\||\.(pdf|docx?|xlsx?|aspx?|php|html?)\b|^https?:/i;
     const centers = (extracted?.centers || []).filter(
       (c) => c?.name && !JUNK.test(c.name) && c.address && c.address.length > 8 && !/text size|skip to main/i.test(c.address)
     );
@@ -227,7 +227,7 @@ function heuristicCenters(all, placeWords = []) {
     const hay = `${r.title} ${snippet}`.toLowerCase();
     if (words.length && !words.some((w) => hay.includes(w))) continue; // must be in the user's area
     const name = String(r.title || "").split(/ [|\-–:] |, /)[0].trim();
-    if (!name || name.length < 4 || /welcome|home ?page|^list of|^top |^popular |^best |directory|near me|^find |^know |^driving directions|^get directions|centers in|centres in|^police in |services in |^one stop centres?$|^a day |blog|article/i.test(name)) continue;
+    if (!name || name.length < 4 || /\.(pdf|docx?|xlsx?|aspx?|php|html?)$/i.test(name) || /welcome|home ?page|^list of|^top |^popular |^best |directory|near me|^find |^know |^driving directions|^get directions|centers in|centres in|^police in |services in |^one stop centres?$|^a day |blog|article/i.test(name)) continue;
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -386,13 +386,13 @@ function buildGoal({ request, plan, url }) {
   const deep = isDeepPage(url);
   return [
     `Citizen's task: "${plan.taskTitle}". They need: ${plan.focus}. (Original request: "${String(request).slice(0, 200)}")`,
-    "The citizen is WATCHING you browse live, so browse the official website naturally and thoroughly, like a helpful person doing this for them.",
+    "The citizen is WATCHING you live and waiting, so be FAST and focused: finish in about 10 actions or fewer. Do not explore unrelated pages.",
     deep
       ? "You are on the official page for this task."
       : `You are on the official website's home page. Suggested route: ${plan.steps || "use the site search or menu to open the most relevant page."}`,
     "1. If a pop-up, cookie banner or language selector appears, close it.",
-    "2. Read the whole page, scrolling down through it. Open each relevant section or tab (Details, Benefits, Eligibility, Exclusions, Application Process, Documents Required, FAQ) and read it.",
-    "3. Then follow the official link to where the citizen applies or acts (for example the scheme's own portal or the 'Apply' page) and read that page too, to confirm how and where to apply. You may open other relevant pages on official government websites if they help answer the task.",
+    "2. Scroll through this page and open only the sections that answer the task (Benefits, Eligibility, Documents Required, Application Process). Skip FAQs and unrelated tabs.",
+    "3. Open ONE more official page only if the documents or how-to-apply steps are missing here. As soon as you have eligibility, documents and how to apply, stop and return the answer.",
     "4. Never log in, never type personal details, never submit forms, never pay, and never leave official .gov.in / .nic.in websites.",
     "Copy the Documents Required list exactly as written on the official page.",
     'Return JSON with keys "title", "summary", "eligibility", "benefits", "documents" (array), "steps" (array of how to apply / what to do), "fees" (if shown), "helpline" (if shown), "official_link" (the official URL where the citizen should apply or act).',
@@ -530,7 +530,7 @@ export async function runSahayakTask({ request, language = "English", onPlan, on
   stage("browse", "active");
 
   const started = Date.now();
-  const TOTAL_BUDGET = 270000; // the agent is allowed to browse fully (up to ~4.5 min)
+  const TOTAL_BUDGET = 150000; // tested 22 Oct: thorough browsing took 3-4.5 min — the citizen already has a quick answer, so cap the live agent at 2.5 min
   let history = []; // steps from earlier attempts, shown in the timeline
   let agentRaw = null;
   let usedUrl = candidates[0];
