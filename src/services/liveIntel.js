@@ -386,12 +386,12 @@ function buildGoal({ request, plan, url }) {
   const deep = isDeepPage(url);
   return [
     `Citizen's task: "${plan.taskTitle}". They need: ${plan.focus}. (Original request: "${String(request).slice(0, 200)}")`,
-    "The citizen is WATCHING you live and waiting, so be FAST and focused: finish in about 10 actions or fewer. Do not explore unrelated pages.",
+    "The citizen is WATCHING this browser live on their phone, so browse visibly and steadily: scroll down through the page and open each relevant section one by one so they can follow along. Stay focused on this task — about 10 to 20 actions — and do not wander to unrelated pages.",
     deep
       ? "You are on the official page for this task."
       : `You are on the official website's home page. Suggested route: ${plan.steps || "use the site search or menu to open the most relevant page."}`,
     "1. If a pop-up, cookie banner or language selector appears, close it.",
-    "2. Scroll through this page and open only the sections that answer the task (Benefits, Eligibility, Documents Required, Application Process). Skip FAQs and unrelated tabs.",
+    "2. Scroll through the whole page. Open and read each section that answers the task, one at a time: Details, Benefits, Eligibility, Exclusions, Application Process, Documents Required. Skip FAQs and unrelated tabs.",
     "3. Open ONE more official page only if the documents or how-to-apply steps are missing here. As soon as you have eligibility, documents and how to apply, stop and return the answer.",
     "4. Never log in, never type personal details, never submit forms, never pay, and never leave official .gov.in / .nic.in websites.",
     "Copy the Documents Required list exactly as written on the official page.",
@@ -530,7 +530,7 @@ export async function runSahayakTask({ request, language = "English", onPlan, on
   stage("browse", "active");
 
   const started = Date.now();
-  const TOTAL_BUDGET = 150000; // tested 22 Oct: thorough browsing took 3-4.5 min — the citizen already has a quick answer, so cap the live agent at 2.5 min
+  const TOTAL_BUDGET = 180000; // 22 Oct: "browse everything" took 3-4.5 min, "be fast" finished in 24 s (too quick to watch) — visible browsing of one page, capped at 3 min
   let history = []; // steps from earlier attempts, shown in the timeline
   let agentRaw = null;
   let usedUrl = candidates[0];

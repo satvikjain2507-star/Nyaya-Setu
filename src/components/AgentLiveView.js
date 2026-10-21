@@ -61,7 +61,17 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
 
   const secs = Math.floor(elapsedMs / 1000);
   const running = !["COMPLETED", "FAILED", "CANCELLED", "FALLBACK"].includes(status);
-  const showStream = streamingUrl && !webError && running;
+  // keep the live browser on screen for a few seconds after the agent finishes,
+  // so a fast run (PM-KISAN finished in 24 s) is still seen by the citizen
+  const [grace, setGrace] = useState(false);
+  useEffect(() => {
+    if (running) return setGrace(false);
+    if (!streamingUrl) return;
+    setGrace(true);
+    const id = setTimeout(() => setGrace(false), 10000);
+    return () => clearTimeout(id);
+  }, [running, streamingUrl]);
+  const showStream = streamingUrl && !webError && (running || grace);
   // 16:10 frame (desktop browser shape) so the page is not squashed
   const frameH = Math.round((width - SPACING.lg * 2) * 0.62);
 
@@ -81,6 +91,11 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
             <View style={styles.liveBadge}>
               <LiveDot color="#fff" size={6} />
               <Text style={styles.liveBadgeText}>LIVE</Text>
+            </View>
+          )}
+          {!running && showStream && (
+            <View style={[styles.liveBadge, { backgroundColor: COLORS.teal }]}>
+              <Text style={styles.liveBadgeText}>✓ DONE</Text>
             </View>
           )}
         </View>
