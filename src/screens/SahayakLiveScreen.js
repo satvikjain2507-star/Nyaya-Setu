@@ -12,6 +12,7 @@ import KeyboardAware from "../components/KeyboardAware";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatInput from "../components/ChatInput";
 import AgentLiveView from "../components/AgentLiveView";
+import PipelineStrip from "../components/PipelineStrip";
 import { LiveDot, SourceChips, openLink } from "../components/LiveCard";
 import { COLORS, RADIUS, SPACING } from "../constants/theme";
 import { speak, stopSpeaking } from "../utils/speaker";
@@ -41,6 +42,7 @@ export default function SahayakLiveScreen() {
   const [plan, setPlan] = useState(null);
   const [live, setLive] = useState({ status: "PENDING", steps: [], streamingUrl: null, elapsed: 0 });
   const [result, setResult] = useState(null);
+  const [stages, setStages] = useState({});
   const [error, setError] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const voice = useVoiceRecorder();
@@ -66,6 +68,7 @@ export default function SahayakLiveScreen() {
     setRequest(text);
     setPlan(null);
     setResult(null);
+    setStages({});
     setError(null);
     setLive({ status: "PENDING", steps: [], streamingUrl: null, elapsed: 0 });
     setPhase("planning");
@@ -100,6 +103,7 @@ export default function SahayakLiveScreen() {
           setResult(q);
           if (!spokeRef.current) say(q.answer);
         },
+        onStage: (key, status, detail) => setStages((prev) => ({ ...prev, [key]: { status, detail } })),
         shouldStop: () => stopRef.current,
       });
       finalRef.current = true;
@@ -112,6 +116,8 @@ export default function SahayakLiveScreen() {
       setLive((prev) => ({ ...prev, status: res.mode === "agent" ? "COMPLETED" : "FALLBACK" }));
       setPhase("done");
       if (!spokeRef.current) say(res.answer);
+      // the citizen already heard the instant answer — now tell them what the official page confirmed or corrected
+      else if (res.crossCheck?.note) say(res.crossCheck.note);
       setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 300);
     } catch (e) {
       finalRef.current = true;
@@ -221,6 +227,8 @@ export default function SahayakLiveScreen() {
                 )}
               </View>
 
+              <PipelineStrip stages={stages} />
+
               {phase === "running" && (
                 <>
                 <AgentLiveView
@@ -244,6 +252,14 @@ export default function SahayakLiveScreen() {
                       <Text style={styles.speaker}>🔊</Text>
                     </TouchableOpacity>
                   </View>
+                  {result.crossCheck && phase === "done" && (
+                    <View style={[styles.cross, result.crossCheck.status === "corrected" && styles.crossFix]}>
+                      <Text style={[styles.crossTitle, result.crossCheck.status === "corrected" && { color: "#A86A00" }]}>
+                        {result.crossCheck.status === "corrected" ? "🔄 Gemini corrected its first answer using the official page" : "🤝 Gemini's answer matches the official page"}
+                      </Text>
+                      {!!result.crossCheck.note && <Text style={styles.crossNote}>{result.crossCheck.note}</Text>}
+                    </View>
+                  )}
                   <Text style={styles.answer}>{result.answer}</Text>
 
                   {result.eligibility?.length > 0 && (
@@ -393,6 +409,10 @@ const styles = StyleSheet.create({
   demo: { marginTop: SPACING.sm, fontSize: 11, color: COLORS.midGray },
   newBtn: { alignSelf: "center", marginTop: SPACING.lg, backgroundColor: COLORS.gold, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.xl, paddingVertical: 10 },
   newText: { color: COLORS.white, fontWeight: "800" },
+  cross: { marginTop: SPACING.sm, backgroundColor: "#E6F4EA", borderRadius: RADIUS.sm, padding: SPACING.sm + 2, borderLeftWidth: 3, borderLeftColor: "#1E7B3C" },
+  crossFix: { backgroundColor: "#FFF4DC", borderLeftColor: "#A86A00" },
+  crossTitle: { fontSize: 12.5, fontWeight: "800", color: "#1E7B3C" },
+  crossNote: { fontSize: 12.5, color: COLORS.ink600, marginTop: 2, lineHeight: 18 },
   errorCard: { backgroundColor: "#FDECEC", borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
   errorText: { color: "#B42318", fontSize: 13.5 },
   retry: { color: "#B42318", fontWeight: "800", marginTop: 6 },

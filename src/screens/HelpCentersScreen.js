@@ -1,6 +1,6 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, ScrollView } from "react-native";
 import * as Location from "expo-location";
 import { COLORS, RADIUS, SPACING } from "../constants/theme";
 import { HELP_CENTERS } from "../data/helpCenters";
@@ -10,38 +10,70 @@ import { findHelpCentersLive } from "../services/liveIntel";
 import { LiveDot, LiveWorking, openLink } from "../components/LiveCard";
 import { hasTinyFishKey } from "../services/tinyfishApi";
 
-const TYPE_ICON = (type = "") =>
-  /police/i.test(type) ? "🚓" : /legal|dlsa/i.test(type) ? "⚖️" : /women|one stop|sakhi/i.test(type) ? "👩" : "🏛️";
+// type → filter key, icon and colour
+const KIND = (type = "") =>
+  /police/i.test(type)
+    ? { key: "police", icon: "🚓", color: "#0E7AA8", soft: "#E4F1F8" }
+    : /legal|dlsa/i.test(type)
+    ? { key: "legal", icon: "⚖️", color: "#6B4FD8", soft: "#ECE8FB" }
+    : /women|one stop|sakhi/i.test(type)
+    ? { key: "women", icon: "👩", color: COLORS.rose, soft: COLORS.roseSoft }
+    : { key: "csc", icon: "🏛️", color: COLORS.teal, soft: COLORS.tealSoft };
+
+const FILTERS = [
+  { key: "all", label: null, icon: "✨" },
+  { key: "csc", label: "CSC", icon: "🏛️" },
+  { key: "legal", label: "Legal aid", icon: "⚖️" },
+  { key: "police", label: "Police", icon: "🚓" },
+  { key: "women", label: "Women", icon: "👩" },
+];
+
+// Google Maps searches around the user's real position — always works, even if live web search fails
+const MAP_SEARCHES = [
+  { q: "Common Service Centre CSC", label: "CSC centre", icon: "🏛️" },
+  { q: "police station", label: "Police station", icon: "🚓" },
+  { q: "District Legal Services Authority", label: "Legal aid (DLSA)", icon: "⚖️" },
+  { q: "One Stop Centre Sakhi", label: "Women's help", icon: "👩" },
+];
+
+const HELPLINES = [
+  ["112", "Emergency"],
+  ["1930", "Cyber fraud"],
+  ["15100", "Free legal aid"],
+  ["181", "Women"],
+  ["14599", "CSC helpdesk"],
+];
 
 export default function HelpCentersScreen() {
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(true);
+  const [locating, setLocating] = useState(true);
+  const [coords, setCoords] = useState(null);
   const [centers, setCenters] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [place, setPlace] = useState(null); // { city, district, state }
+  const [place, setPlace] = useState(null); // { city, district, state, locality }
   const [liveState, setLiveState] = useState("idle"); // idle | loading | done | error
   const [liveCenters, setLiveCenters] = useState([]);
   const [liveError, setLiveError] = useState(null);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          setErrorMsg("Location permission denied — showing sample list instead.");
+          setErrorMsg("Location permission is off — showing known centres. Allow location for centres near you.");
           setCenters(HELP_CENTERS.map((c) => ({ ...c, distance: null })));
-          setLoading(false);
           return;
         }
-        const loc = await Location.getCurrentPositionAsync({});
-        const withDistance = HELP_CENTERS.map((c) => ({
-          ...c,
-          distance: distanceKm(loc.coords.latitude, loc.coords.longitude, c.lat, c.lng),
-        })).sort((a, b) => a.distance - b.distance);
-        setCenters(withDistance);
-
+        const loc = (await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 }).catch(() => null)) || (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+        const { latitude, longitude } = loc.coords;
+        setCoords({ latitude, longitude });
+        setCenters(
+          HELP_CENTERS.map((c) => ({ ...c, distance: distanceKm(latitude, longitude, c.lat, c.lng) })).sort((a, b) => a.distance - b.distance)
+        );
+        setLocating(false);
         try {
-          const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
           if (geo) {
             const p = { city: geo.city || geo.subregion, district: geo.subregion || geo.city, state: geo.region, locality: geo.district || geo.street || "" };
             setPlace(p);
@@ -51,11 +83,11 @@ export default function HelpCentersScreen() {
           console.warn("Reverse geocode failed:", e.message);
         }
       } catch (e) {
-        console.error("Location error:", e);
-        setErrorMsg("Couldn't get your location — showing sample list instead.");
+        console.warn("Location error:", e?.message);
+        setErrorMsg("Couldn't get your location — showing known centres.");
         setCenters(HELP_CENTERS.map((c) => ({ ...c, distance: null })));
       } finally {
-        setLoading(false);
+        setLocating(false);
       }
     })();
   }, []);
@@ -74,62 +106,103 @@ export default function HelpCentersScreen() {
     }
   };
 
-  const mapsUrl = (c) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name} ${c.address || ""}`)}`;
+  const mapsSearch = (q) =>
+    coords
+      ? `https://www.google.com/maps/search/${encodeURIComponent(q)}/@${coords.latitude},${coords.longitude},14z`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${q} near me`)}`;
+  const directions = (c) => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${c.name} ${c.address || ""}`)}`;
 
-  if (loading) {
-    return (
-      <SafeAreaView edges={["left", "right"]} style={[styles.safe, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.orange} />
-      </SafeAreaView>
-    );
-  }
-
-  const placeLabel = place ? [place.city, place.state].filter(Boolean).join(", ") : "";
+  const placeLabel = place ? [place.locality, place.city, place.state].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(", ") : "";
   const showLive = liveState === "done" && liveCenters.length > 0;
-  const data = showLive ? liveCenters : centers;
-
-  const HELPLINES = [
-    ["112", "Emergency"],
-    ["1930", "Cyber fraud"],
-    ["15100", "Free legal aid"],
-    ["181", "Women helpline"],
-    ["14599", "CSC helpdesk"],
-  ];
+  const source = showLive ? liveCenters : centers;
+  const data = useMemo(() => (filter === "all" ? source : source.filter((c) => KIND(c.type).key === filter)), [source, filter]);
+  const counts = useMemo(() => {
+    const m = { all: source.length };
+    source.forEach((c) => (m[KIND(c.type).key] = (m[KIND(c.type).key] || 0) + 1));
+    return m;
+  }, [source]);
 
   const Header = (
     <View>
-      <View style={styles.helpRow}>
-        {HELPLINES.map(([n, l]) => (
-          <TouchableOpacity key={n} style={styles.helpBtn} onPress={() => Linking.openURL(`tel:${n}`)}>
-            <Text style={styles.helpNum}>📞 {n}</Text>
-            <Text style={styles.helpLbl}>{l}</Text>
+      {/* Where am I */}
+      <View style={styles.locCard}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={{ fontSize: 22 }}>📍</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.locLabel}>YOUR LOCATION</Text>
+            <Text style={styles.locText} numberOfLines={2}>
+              {locating ? "Finding where you are…" : placeLabel || (coords ? "Location found" : "Location not available")}
+            </Text>
+          </View>
+          {locating && <ActivityIndicator color={COLORS.gold} />}
+        </View>
+        {(place || liveState !== "idle") && (
+          <View style={styles.liveRow}>
+            <LiveDot />
+            <Text style={styles.liveText}>
+              {liveState === "loading"
+                ? `${t("findingRealCentres")} ${place?.city || ""}…`
+                : showLive
+                ? `${liveCenters.length} ${t("realCentresIn")} ${place?.city || ""} · TinyFish${hasTinyFishKey() ? "" : " (demo)"}`
+                : liveState === "error"
+                ? "Live search failed"
+                : "Live web search via TinyFish"}
+            </Text>
+          </View>
+        )}
+        {liveState === "error" && (
+          <TouchableOpacity onPress={() => runLive()}>
+            <Text style={styles.retry}>⚠️ {liveError} — tap to retry</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Nearest on the map — works even without live search */}
+      <Text style={styles.section}>🗺️ {t("nearestOnMap")}</Text>
+      <View style={styles.mapGrid}>
+        {MAP_SEARCHES.map((m) => (
+          <TouchableOpacity key={m.q} style={styles.mapBtn} onPress={() => openLink(mapsSearch(m.q))} activeOpacity={0.85}>
+            <Text style={styles.mapIcon}>{m.icon}</Text>
+            <Text style={styles.mapText} numberOfLines={1}>
+              {m.label}
+            </Text>
+            <Text style={styles.mapGo}>↗</Text>
           </TouchableOpacity>
         ))}
       </View>
-      {place && (
-        <View style={styles.liveBanner}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <LiveDot />
-            <Text style={styles.liveTitle}>
-              {showLive ? `${t("realCentresIn")} ${placeLabel}` : `${t("findingRealCentres")} ${placeLabel}`}
-            </Text>
-          </View>
-          <Text style={styles.liveSub}>
-            Searched live on the web via TinyFish{hasTinyFishKey() ? "" : " (demo mode)"} · verify before visiting
-          </Text>
-          {liveState === "error" && (
-            <TouchableOpacity onPress={() => runLive()}>
-              <Text style={styles.retry}>⚠️ {liveError} — tap to retry</Text>
+
+      {/* Helplines */}
+      <Text style={styles.section}>📞 {t("helplinesOneTap")}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingBottom: 2 }}>
+        {HELPLINES.map(([n, l]) => (
+          <TouchableOpacity key={n} style={styles.helpBtn} onPress={() => Linking.openURL(`tel:${n}`)}>
+            <Text style={styles.helpNum}>{n}</Text>
+            <Text style={styles.helpLbl}>{l}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Filters */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+        {FILTERS.map((f) => {
+          const on = filter === f.key;
+          const n = counts[f.key] || 0;
+          return (
+            <TouchableOpacity key={f.key} style={[styles.filter, on && styles.filterOn]} onPress={() => setFilter(f.key)}>
+              <Text style={[styles.filterText, on && styles.filterTextOn]}>
+                {f.icon} {f.label || t("allTypes")} {n ? `· ${n}` : ""}
+              </Text>
             </TouchableOpacity>
-          )}
-        </View>
-      )}
+          );
+        })}
+      </ScrollView>
+
       {liveState === "loading" && (
-        <LiveWorking lines={["Searching CSC centres near you…", "Finding your District Legal Services Authority…", "Finding police stations & One Stop Centres…", "Extracting addresses & phone numbers…"]} />
+        <LiveWorking lines={["Searching CSC centres near you…", "Finding your District Legal Services Authority…", "Finding police stations & One Stop Centres…", "Gemini is extracting addresses & phone numbers…"]} />
       )}
       {!showLive && liveState !== "loading" && (
         <Text style={styles.sampleNote}>
-          {errorMsg || (liveState === "done" ? "Couldn't confirm exact addresses online right now — showing known centres:" : "Known centres (offline list):")}
+          {errorMsg || (liveState === "done" ? "Couldn't confirm exact addresses online — use “Nearest on the map” above, or these known centres:" : "Known centres:")}
         </Text>
       )}
     </View>
@@ -139,30 +212,38 @@ export default function HelpCentersScreen() {
     <SafeAreaView edges={["left", "right"]} style={styles.safe}>
       <FlatList
         data={data}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, i) => item.id || String(i)}
         ListHeaderComponent={Header}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <View style={[styles.card, item.live && styles.cardLive]}>
-            <Text style={styles.name}>
-              {TYPE_ICON(item.type)} {item.name}
-            </Text>
-            <Text style={styles.type}>{item.type}</Text>
-            {!!item.address && <Text style={styles.address}>{item.address}</Text>}
-            {item.distance != null && (
-              <Text style={styles.distance}>
-                {item.distance.toFixed(1)} km {t("distanceAway")}
-              </Text>
-            )}
-            {item.live && (
+        ListEmptyComponent={
+          liveState !== "loading" && !locating ? <Text style={styles.sampleNote}>No centres of this type found — try “Nearest on the map”.</Text> : null
+        }
+        contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xl * 2 }}
+        renderItem={({ item }) => {
+          const k = KIND(item.type);
+          return (
+            <View style={[styles.card, { borderLeftColor: k.color }]}>
+              <View style={{ flexDirection: "row", gap: SPACING.md }}>
+                <View style={[styles.kIcon, { backgroundColor: k.soft }]}>
+                  <Text style={{ fontSize: 19 }}>{k.icon}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={[styles.type, { color: k.color }]}>{item.type}</Text>
+                  {!!item.address && <Text style={styles.address}>{item.address}</Text>}
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+                    {item.distance != null && <Text style={styles.meta}>📏 {item.distance.toFixed(1)} km {t("distanceAway")}</Text>}
+                    {item.live && <Text style={[styles.meta, { color: COLORS.teal, fontWeight: "700" }]}>● found live</Text>}
+                  </View>
+                </View>
+              </View>
               <View style={styles.btnRow}>
                 {!!item.phone && (
-                  <TouchableOpacity style={styles.btn} onPress={() => Linking.openURL(`tel:${item.phone.replace(/[^\d+]/g, "")}`)}>
-                    <Text style={styles.btnText}>📞 Call</Text>
+                  <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => Linking.openURL(`tel:${item.phone.replace(/[^\d+]/g, "")}`)}>
+                    <Text style={[styles.btnText, { color: COLORS.white }]}>📞 Call</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.btn} onPress={() => openLink(mapsUrl(item))}>
-                  <Text style={styles.btnText}>🗺️ Directions</Text>
+                <TouchableOpacity style={styles.btn} onPress={() => openLink(directions(item))}>
+                  <Text style={styles.btnText}>🧭 Directions</Text>
                 </TouchableOpacity>
                 {!!item.url && (
                   <TouchableOpacity style={styles.btn} onPress={() => openLink(item.url)}>
@@ -170,40 +251,45 @@ export default function HelpCentersScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-            )}
-          </View>
-        )}
+            </View>
+          );
+        }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.white },
-  center: { justifyContent: "center", alignItems: "center" },
-  helpRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: SPACING.md },
-  helpBtn: { backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: "#EBC6CD" },
-  helpNum: { color: COLORS.rose, fontWeight: "800", fontSize: 13 },
+  safe: { flex: 1, backgroundColor: COLORS.parchment },
+  locCard: { backgroundColor: COLORS.ink, borderRadius: RADIUS.md, padding: SPACING.md + 2 },
+  locLabel: { color: COLORS.gold, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  locText: { color: COLORS.white, fontSize: 15, fontWeight: "800", marginTop: 1 },
+  liveRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: SPACING.sm, backgroundColor: COLORS.inkSoft, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 5, alignSelf: "flex-start" },
+  liveText: { color: "#E7DCEB", fontSize: 11.5, fontWeight: "700" },
+  retry: { color: COLORS.gold, marginTop: 8, fontWeight: "700" },
+  section: { fontSize: 12, fontWeight: "900", color: COLORS.ink, letterSpacing: 0.5, marginTop: SPACING.lg, marginBottom: SPACING.sm, textTransform: "uppercase" },
+  mapGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 8 },
+  mapBtn: { width: "48.5%", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: COLORS.white, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 11, borderWidth: 1, borderColor: COLORS.border },
+  mapIcon: { fontSize: 17 },
+  mapText: { flex: 1, fontSize: 12.5, fontWeight: "700", color: COLORS.ink900 },
+  mapGo: { color: COLORS.teal, fontWeight: "900" },
+  helpBtn: { backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.sm, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "#EBC6CD", alignItems: "center" },
+  helpNum: { color: COLORS.rose, fontWeight: "900", fontSize: 14 },
   helpLbl: { color: COLORS.darkGray, fontSize: 10.5, marginTop: 1 },
-  sampleNote: { color: COLORS.midGray, fontSize: 12, padding: 8 },
-  liveBanner: { backgroundColor: COLORS.ink, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
-  liveTitle: { color: COLORS.white, fontWeight: "800", fontSize: 14, flexShrink: 1 },
-  liveSub: { color: "#D9CFE0", fontSize: 11.5, marginTop: 4 },
-  retry: { color: COLORS.gold, marginTop: 6, fontWeight: "700" },
-  card: {
-    backgroundColor: COLORS.lightBg,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.navy,
-  },
-  cardLive: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderLeftColor: COLORS.teal },
-  name: { fontSize: 15, fontWeight: "bold", color: COLORS.black },
-  type: { fontSize: 12.5, color: COLORS.orange, marginTop: 2, fontWeight: "600" },
-  address: { fontSize: 12.5, color: COLORS.darkGray, marginTop: 4 },
-  distance: { fontSize: 12, color: COLORS.midGray, marginTop: 6 },
-  btnRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
-  btn: { backgroundColor: COLORS.tealSoft, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  btnText: { color: COLORS.teal, fontWeight: "700", fontSize: 12.5 },
+  filters: { gap: 6, paddingVertical: SPACING.md },
+  filter: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 12, paddingVertical: 6 },
+  filterOn: { backgroundColor: COLORS.ink, borderColor: COLORS.ink },
+  filterText: { fontSize: 12.5, fontWeight: "700", color: COLORS.ink600 },
+  filterTextOn: { color: COLORS.white },
+  sampleNote: { color: COLORS.midGray, fontSize: 12, paddingVertical: 8 },
+  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md + 2, marginBottom: SPACING.md, borderLeftWidth: 4, shadowColor: COLORS.inkDeep, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 },
+  kIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  name: { fontSize: 15, fontWeight: "800", color: COLORS.ink900 },
+  type: { fontSize: 12, marginTop: 2, fontWeight: "700" },
+  address: { fontSize: 12.5, color: COLORS.darkGray, marginTop: 4, lineHeight: 18 },
+  meta: { fontSize: 11.5, color: COLORS.midGray },
+  btnRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: SPACING.md },
+  btn: { backgroundColor: COLORS.tealSoft, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 7 },
+  btnPrimary: { backgroundColor: COLORS.teal },
+  btnText: { color: COLORS.teal, fontWeight: "800", fontSize: 12.5 },
 });

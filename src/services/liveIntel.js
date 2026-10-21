@@ -403,10 +403,13 @@ function buildGoal({ request, plan, url }) {
 const EXPLAIN_SYSTEM =
   "You explain government information to Indian citizens in very simple, spoken-style language. Use only the provided live data. Never invent amounts, dates, fees or links.";
 
-async function explainData({ request, raw, siteName, language, extra }) {
+async function explainData({ request, raw, siteName, language, extra, previous }) {
+  const cross = previous
+    ? `\n\nAN INSTANT ANSWER was given earlier from AI memory (NOT verified): """${String(previous).slice(0, 1500)}"""\nCompare it with the LIVE DATA and add to the JSON: "crossCheck": {"status": "confirmed" if the instant answer agrees with the official data, or "corrected" if any amount, eligibility rule, document or step was wrong or missing, "note": "one short sentence in ${language} saying what the official page confirmed or corrected"}.`
+    : "";
   return geminiJSON(
     EXPLAIN_SYSTEM,
-    `Citizen request: """${request}"""\nLIVE DATA collected just now from ${siteName} (official sources, via TinyFish):\n${typeof raw === "string" ? raw : JSON.stringify(raw, null, 1).slice(0, 12000)}${extra ? `\n\nEXTRA CONTEXT from other official pages (use only if the live data above lacks it):\n${extra.slice(0, 3000)}` : ""}\n\n${languageRule(language)} All text values in the JSON must follow this rule. Return JSON:\n{"answer": "5-7 simple spoken sentences: what the scheme/service gives (exact amounts if in the data), who is eligible, the main documents needed, and how to apply", "eligibility": ["who can get it — up to 5 short points"], "documents": ["EVERY document listed as required in the data, one per item, short names"], "keyFacts": ["up to 4 other short facts (benefit amount, fees, deadlines, helpline)"], "nextSteps": ["up to 5 short numbered action steps to apply / act"], "officialLink": "official URL from the data or empty string"}
+    `Citizen request: """${request}"""${cross}\nLIVE DATA collected just now from ${siteName} (official sources, via TinyFish):\n${typeof raw === "string" ? raw : JSON.stringify(raw, null, 1).slice(0, 12000)}${extra ? `\n\nEXTRA CONTEXT from other official pages (use only if the live data above lacks it):\n${extra.slice(0, 3000)}` : ""}\n\n${languageRule(language)} All text values in the JSON must follow this rule. Return JSON:\n{"answer": "5-7 simple spoken sentences: what the scheme/service gives (exact amounts if in the data), who is eligible, the main documents needed, and how to apply", "eligibility": ["who can get it — up to 5 short points"], "documents": ["EVERY document listed as required in the data, one per item, short names"], "keyFacts": ["up to 4 other short facts (benefit amount, fees, deadlines, helpline)"], "nextSteps": ["up to 5 short numbered action steps to apply / act"], "officialLink": "official URL from the data or empty string"}
 If the citizen asked about a scheme or service, "documents" must NOT be empty: use the documents in the data; only if the data has none, list the documents normally asked for this scheme and make the first item "Confirm the final list on the official website".`
   );
 }
@@ -432,7 +435,7 @@ async function instantAnswer({ request, language }) {
 }
 
 /** Fast path (~10-20 s): TinyFish Search + Fetch of official pages, explained by Gemini. */
-async function quickAnswer({ request, plan, language, startPagesP }) {
+async function quickAnswer({ request, plan, language, startPagesP, instantP }) {
   const [found, startPages] = await Promise.all([
     tinyfishSearch(`${plan.searchQuery || request} eligibility documents required how to apply`, { location: "IN", purpose: `${request} — eligibility, documents required and how to apply` }).catch(() => []),
     startPagesP ? startPagesP.catch(() => []) : Promise.resolve([]),
@@ -445,7 +448,8 @@ async function quickAnswer({ request, plan, language, startPagesP }) {
     ? await tinyfishFetch(toRead, { purpose: request, perUrlTimeoutMs: 15000 }).catch(() => ({ results: [] }))
     : { results: [] };
   const raw = pagesToContext(pages.filter((pg) => (pg.text || "").length > 400), results.slice(0, 8));
-  const explained = await explainData({ request, raw, siteName: "official websites", language });
+  const previous = instantP ? (await Promise.race([instantP, sleepMs(4000).then(() => null)]))?.answer : null;
+  const explained = await explainData({ request, raw, siteName: "official websites", language, previous });
   if (!explained?.answer) return null;
   return {
     mode: "search",
@@ -456,9 +460,17 @@ async function quickAnswer({ request, plan, language, startPagesP }) {
     eligibility: explained.eligibility || [],
     officialLink: explained.officialLink || results.find((r) => isOfficialSite(r.url))?.url || "",
     sources: toSources([...pages, ...results], 4),
+    crossCheck: normCross(explained.crossCheck),
+    pagesRead: pages.length,
     rawContext: raw,
     demo: !hasTinyFishKey(),
   };
+}
+
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+function normCross(c) {
+  if (!c || !c.status) return null;
+  return { status: /correct/i.test(c.status) ? "corrected" : "confirmed", note: String(c.note || "") };
 }
 
 const asList = (v) => (Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : JSON.stringify(x))) : typeof v === "string" && v ? [v] : []);
@@ -483,17 +495,29 @@ const BLOCK_RE = /\b403\b|forbidden|access denied|can.?t be reached|cannot be re
  *  4. If a page blocks the cloud browser, the agent quietly moves to the next official page.
  *  The agent is never cut off for being "slow" — it gets up to ~2.5 min in total.
  */
-export async function runSahayakTask({ request, language = "English", onPlan, onUpdate, onQuick, onInstant, shouldStop }) {
+export async function runSahayakTask({ request, language = "English", onPlan, onUpdate, onQuick, onInstant, onStage, shouldStop }) {
+  // Pipeline stages shown to the citizen: Gemini understands → TinyFish finds → TinyFish browses → Gemini verifies
+  const stage = (key, status, detail) => {
+    try {
+      onStage?.(key, status, detail);
+    } catch (_) {}
+  };
+  stage("understand", "active");
   // start speaking at once — runs in parallel with planning and the browser start-up
-  instantAnswer({ request, language })
-    .then((a) => a && !shouldStop?.() && onInstant?.(a))
-    .catch(() => {});
+  const instantP = instantAnswer({ request, language })
+    .then((a) => {
+      if (a && !shouldStop?.()) onInstant?.(a);
+      return a;
+    })
+    .catch(() => null);
   const plan = await planAgentTask({ request });
   onPlan?.(plan);
+  stage("understand", "done", plan.taskTitle);
+  stage("find", "active");
 
   // search for the exact official page once; both the quick answer and the live agent use it
   const startPagesP = findStartPages(plan);
-  const quickP = quickAnswer({ request, plan, language, startPagesP })
+  const quickP = quickAnswer({ request, plan, language, startPagesP, instantP })
     .then((q) => {
       if (q && !shouldStop?.()) onQuick?.({ ...q, plan });
       return q;
@@ -502,6 +526,8 @@ export async function runSahayakTask({ request, language = "English", onPlan, on
 
   const candidates = await startPagesP;
   if (shouldStop?.()) return { cancelled: true, plan };
+  stage("find", "done", candidates[0] ? hostnameOf(candidates[0]) : "");
+  stage("browse", "active");
 
   const started = Date.now();
   const TOTAL_BUDGET = 270000; // the agent is allowed to browse fully (up to ~4.5 min)
@@ -563,18 +589,27 @@ export async function runSahayakTask({ request, language = "English", onPlan, on
 
   const q = await quickP;
   const finalPlan = { ...plan, url: usedUrl, siteName: siteLabel(usedUrl) };
+  stage("browse", agentRaw ? "done" : "skipped", agentRaw ? siteLabel(usedUrl) : "");
+  stage("verify", "active");
 
   if (!agentRaw) {
     onUpdate?.({ status: "FALLBACK", streamingUrl, steps: [...history, { action: "Answer prepared from official government pages ✓", status: "COMPLETED" }], elapsed: Date.now() - started });
-    if (q) return { ...q, plan: finalPlan, steps: history };
+    if (q) {
+      stage("verify", "done", `${q.pagesRead || q.sources?.length || 0} official pages`);
+      return { ...q, plan: finalPlan, steps: history };
+    }
+    stage("verify", "error");
     throw new Error("Couldn't reach the official websites right now. Please check your internet and try again.");
   }
 
   onUpdate?.({ status: "COMPLETED", streamingUrl, steps: [...history, { action: `Finished on ${hostnameOf(usedUrl)} ✓`, status: "COMPLETED" }], elapsed: Date.now() - started });
-  const explained = await explainData({ request, raw: agentRaw, siteName: finalPlan.siteName, language, extra: q?.rawContext });
+  const instant = await Promise.race([instantP, sleepMs(1000).then(() => null)]);
+  const explained = await explainData({ request, raw: agentRaw, siteName: finalPlan.siteName, language, extra: q?.rawContext, previous: instant?.answer });
+  stage("verify", "done", finalPlan.siteName);
   return {
     plan: finalPlan,
     mode: "agent",
+    crossCheck: normCross(explained?.crossCheck) || q?.crossCheck || null,
     steps: history,
     answer: explained?.answer || q?.answer || agentAnswer(agentRaw),
     keyFacts: explained?.keyFacts?.length ? explained.keyFacts : q?.keyFacts?.length ? q.keyFacts : asList(agentRaw?.benefits).slice(0, 4),
