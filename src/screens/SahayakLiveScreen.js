@@ -118,6 +118,7 @@ export default function SahayakLiveScreen() {
       if (!spokeRef.current) say(res.answer);
       // the citizen already heard the instant answer — now tell them what the official page confirmed or corrected
       else if (res.crossCheck?.note) say(res.crossCheck.note);
+      // scroll up so the live browser (now right under the task) is on screen
       setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 300);
     } catch (e) {
       finalRef.current = true;
@@ -227,8 +228,6 @@ export default function SahayakLiveScreen() {
                 )}
               </View>
 
-              <PipelineStrip stages={stages} />
-
               {phase === "running" && (
                 <>
                 <AgentLiveView
@@ -239,8 +238,22 @@ export default function SahayakLiveScreen() {
                   siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
                   demo={!hasTinyFishKey()}
                 />
-                  {result && <View style={{ height: SPACING.md }} />}
+                <View style={{ height: SPACING.md }} />
                 </>
+              )}
+
+              <PipelineStrip stages={stages} />
+              {phase === "done" && (
+                <View style={{ marginBottom: SPACING.md }}>
+                <AgentLiveView
+                  streamingUrl={live.streamingUrl}
+                  steps={live.steps}
+                  status={live.status}
+                  elapsedMs={live.elapsed}
+                  siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
+                  demo={!hasTinyFishKey()}
+                />
+                </View>
               )}
               {result && (phase === "done" || phase === "running" || phase === "planning") && (
                 <View style={styles.resultCard}>
@@ -314,18 +327,6 @@ export default function SahayakLiveScreen() {
                 </View>
               )}
 
-              {phase === "done" && (
-                <View style={{ marginTop: SPACING.sm }}>
-                <AgentLiveView
-                  streamingUrl={live.streamingUrl}
-                  steps={live.steps}
-                  status={live.status}
-                  elapsedMs={live.elapsed}
-                  siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
-                  demo={!hasTinyFishKey()}
-                />
-                </View>
-              )}
 
               {busy && (
                 <TouchableOpacity style={styles.cancelBtn} onPress={cancel}>

@@ -1,23 +1,125 @@
 {
-  "at": "2026-10-21T19:27:15.891Z",
+  "at": "2026-10-21T19:50:09.297Z",
   "results": [
+    {
+      "name": "Gemini model gemini-3.5-flash-lite",
+      "ok": true,
+      "time": "1.3s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-flash-lite-latest",
+      "ok": true,
+      "time": "1.2s",
+      "detail": "OK"
+    },
+    {
+      "name": "Gemini model gemini-3-flash-preview",
+      "ok": false,
+      "time": "30.0s",
+      "detail": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Gemini model gemini-flash-latest",
+      "ok": false,
+      "time": "1.7s",
+      "detail": "HTTP 503 This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+    },
+    {
+      "name": "Gemini model gemini-3.8-flash",
+      "ok": false,
+      "time": "1.3s",
+      "detail": "HTTP 503 This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+    },
+    {
+      "name": "Gemini JSON mode (app client with failover)",
+      "ok": true,
+      "time": "1.1s",
+      "detail": "{\"ok\":true,\"lang\":\"पानी\"}"
+    },
+    {
+      "name": "Gemini translate English → Tamil",
+      "ok": true,
+      "time": "1.0s",
+      "detail": "உங்களின் ஆயுஷ்மான் அட்டை தயாராக உள்ளது."
+    },
+    {
+      "name": "TinyFish Search (India, official first)",
+      "ok": true,
+      "time": "2.3s",
+      "detail": "10 results · top: https://pmkisan.gov.in/RegistrationFormupdated.aspx"
+    },
+    {
+      "name": "TinyFish Fetch (PM-KISAN official page)",
+      "ok": true,
+      "time": "1.5s",
+      "detail": "647 chars · \"PM-Kisan Samman Nidhi\""
+    },
+    {
+      "name": "Gemini plans agent task: \"मेरे पिता 72 साल के हैं, उनका आयुष्मान क\"",
+      "ok": true,
+      "time": "1.0s",
+      "detail": "myScheme → https://www.myscheme.gov.in/schemes/ab-pmjay · search: \"Ayushman Bharat PM JAY senior citizen 70 plus card creation process myscheme\""
+    },
+    {
+      "name": "Gemini plans agent task: \"My phone was stolen today. How do I bloc\"",
+      "ok": true,
+      "time": "1.1s",
+      "detail": "Sanchar Saathi (CEIR) → https://www.sancharsaathi.gov.in · search: \"block lost mobile phone CEIR Sanchar Saathi\""
+    },
+    {
+      "name": "Gemini plans agent task: \"How to file an RTI application online\"",
+      "ok": true,
+      "time": "1.2s",
+      "detail": "RTI Online → https://rtionline.gov.in · search: \"file RTI application online portal India\""
+    },
+    {
+      "name": "TinyFish Agent run starts + live stream URL",
+      "ok": true,
+      "time": "36.3s",
+      "detail": "run fdea8fa6-87cb-493a-a954-1eccd21bdd38 · status RUNNING · stream ✓"
+    },
     {
       "name": "Sahayak Live end-to-end: \"How can my 72-year-old father get an Ayushman\"",
       "ok": true,
-      "time": "159.2s",
-      "detail": "mode=search instant=2.1s quick=17.1s total=159.2s stream=true steps=12 cross=corrected"
+      "time": "160.2s",
+      "detail": "mode=search instant=2.1s quick=19.9s total=160.2s stream=true steps=8 cross=-"
     },
     {
       "name": "Sahayak Live end-to-end: \"मेरा फ़ोन चोरी हो गया है, उसे कैसे ब्लॉक करूँ\"",
       "ok": true,
-      "time": "103.7s",
-      "detail": "mode=agent instant=2.1s quick=24.5s total=103.7s stream=true steps=15 cross=confirmed"
+      "time": "158.4s",
+      "detail": "mode=search instant=2.1s quick=14.6s total=158.4s stream=true steps=25 cross=corrected"
     },
     {
-      "name": "Sahayak Live end-to-end: \"Am I eligible for PM-KISAN? What documents do\"",
+      "name": "Scam Shield flags fake SBI KYC SMS",
       "ok": true,
-      "time": "73.1s",
-      "detail": "mode=agent instant=1.7s quick=14.9s total=73.1s stream=true steps=7 cross=confirmed"
+      "time": "7.2s",
+      "detail": "likely_scam · This is a fake bank message trying to steal your money · sources 4"
+    },
+    {
+      "name": "Scam Shield keeps genuine message calm",
+      "ok": true,
+      "time": "6.3s",
+      "detail": "likely_genuine · This message looks safe because it directs you to the official government website."
+    },
+    {
+      "name": "Help Centres live (Laxmi Nagar, East Delhi)",
+      "ok": true,
+      "time": "5.7s",
+      "detail": "8 centres (Legal Aid, Police Station) · e.g. EAST DLSA — 36 GROUND FLOOR, KARKARDOOMA COURT COMPLEX SHAHDARA, DELHI – 110032. 9667992793, 011- 22101336, 011-22382490. Toll Free Helpline No. – 1516. east-dlsa@nic.in."
+    },
+    {
+      "name": "Live updates feed (last 7 days)",
+      "ok": true,
+      "time": "3.6s",
+      "detail": "6 items · Government to Stay Live on Mobile: Shri Shivraj Singh Chouhan Launches New Portal for Farmers"
+    },
+    {
+      "name": "Verify Live (scheme answer vs official pages)",
+      "ok": true,
+      "time": "7.3s",
+      "detail": "confirmed · The earlier answer about PM-KISAN is correct. · pmkisan.gov.in, kisansuvidha.gov.in, india.gov.in, pib.gov.in"
     }
   ]
 }
