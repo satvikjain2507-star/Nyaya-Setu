@@ -9,12 +9,11 @@ Built by **Team Hackpeeps**.
 > 🎬 **Demo video:** _add your video link here_  ·  📱 **Android APK:** built with EAS (see [Build](#build-the-android-apk))
 
 <p align="center">
-  <img src="docs/screenshots/home-english.png" width="180" alt="Home screen: Sahayak Live, Scam Shield, Nearby Help Centres and one-tap helplines"/>
-  <img src="docs/screenshots/home-hindi.png" width="180" alt="The same home screen in Hindi"/>
-  <img src="docs/screenshots/sahayak-live.png" width="180" alt="Sahayak Live: TinyFish cloud browser streaming the official CEIR site inside the app"/>
-  <img src="docs/screenshots/languages.png" width="180" alt="13 Indian languages"/>
+  <img src="docs/screenshots/home-english.png" width="190" alt="Home screen: Sahayak Live, Scam Shield, Nearby Help Centres and one-tap helplines"/>
+  <img src="docs/screenshots/sahayak-live.png" width="190" alt="Sahayak Live: TinyFish cloud browser streaming the official CEIR site inside the app"/>
+  <img src="docs/screenshots/languages.png" width="190" alt="13 Indian languages"/>
 </p>
-<p align="center"><i>Home (English &amp; Hindi) · Sahayak Live (TinyFish agent live on ceir.gov.in for a stolen phone) · 13 languages</i></p>
+<p align="center"><i>Home · Sahayak Live (TinyFish agent live on ceir.gov.in for a stolen phone) · 13 languages</i></p>
 
 ---
 
