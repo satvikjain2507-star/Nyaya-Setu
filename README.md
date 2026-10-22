@@ -9,11 +9,12 @@ Built by **Team Hackpeeps**.
 > 🎬 **Demo video:** _add your video link here_  ·  📱 **Android APK:** built with EAS (see [Build](#build-the-android-apk))
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="190" alt="Home screen"/>
-  <img src="docs/screenshots/sahayak-live.png" width="190" alt="Sahayak Live: TinyFish cloud browser streaming the official CEIR site inside the app"/>
-  <img src="docs/screenshots/languages.png" width="190" alt="13 Indian languages"/>
+  <img src="docs/screenshots/home.png" width="180" alt="Home screen: Sahayak Live, Scam Shield, Nearby Help Centres and one-tap helplines"/>
+  <img src="docs/screenshots/home-hindi.png" width="180" alt="The same home screen in Hindi"/>
+  <img src="docs/screenshots/sahayak-live.png" width="180" alt="Sahayak Live: TinyFish cloud browser streaming the official CEIR site inside the app"/>
+  <img src="docs/screenshots/languages.png" width="180" alt="13 Indian languages"/>
 </p>
-<p align="center"><i>Home · Sahayak Live (TinyFish agent live on ceir.gov.in for a stolen phone) · 13 languages</i></p>
+<p align="center"><i>Home (English &amp; Hindi) · Sahayak Live (TinyFish agent live on ceir.gov.in for a stolen phone) · 13 languages</i></p>
 
 ---
 
@@ -37,9 +38,10 @@ Citizens don't lack schemes or laws — they lack a simple, trustworthy way to r
 | Live web (TinyFish) | **🛰️ Sahayak Live** | Speak a task → an AI cloud browser opens the official site and does it **live inside the app**, with a step timeline. |
 | | **✅ Verify Live** | One tap under any answer → cross-checked against official pages → *Verified / Updated / Partial* + sources. |
 | | **🛡️ Scam Shield** | Paste or photograph an SMS / notice → *Genuine / Suspicious / Likely SCAM* + 1930 helpline guidance. |
-| | **📍 Real Help Centres** | GPS → city → real CSC, DLSA, police and One Stop Centres with Call / Directions. |
+| | **📍 Nearby Help Centres** | A core feature on the home screen. GPS → city → real CSC, DLSA, police and One Stop Centres found live, with Call / Directions, filters by type, one-tap helplines (112, 1930, 15100, 181, 14599) and "Nearest on the map" buttons that work even when live search can't. |
 | | **📰 Live Updates** | This week's scheme & fraud-alert news, translated. |
-| Access for all | **13 Indian languages** | Full UI + replies in English, Hindi, Marathi, Bengali, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam, Punjabi, Assamese. |
+| Access for all | **Tap and speak** | One big button on the home screen opens Sahayak Live; no typing needed. |
+| | **13 Indian languages** | Full UI + replies in English, Hindi, Marathi, Bengali, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, Malayalam, Punjabi, Assamese. |
 | | **Read aloud** | Every answer spoken, adjustable speed. |
 | | **Voice Translator** | Speak in one language, hear another. |
 | | **Visual Solver** | Photograph anything and ask about it. |
@@ -71,23 +73,39 @@ TinyFish is what turns Nyaya Setu from a chatbot into an agent that **works on t
 | **Search** | `GET api.search.tinyfish.ai` | Finds the **exact official page** for Sahayak Live, plus Verify Live, Scam Shield, Real Help Centres and Live Updates. India-located; `.gov.in` / `.nic.in` ranked first; 7-day window for news. |
 | **Fetch** | `POST api.fetch.tinyfish.ai` | Reads official pages as clean markdown for Verify Live and the quick answer; every answer cites its source. |
 
-#### How a Sahayak Live task runs
+#### How a Sahayak Live task runs — Gemini and TinyFish working together
+The app shows this hand-off live as a 4-step strip: **Understand (Gemini) → Find page (TinyFish) → Browse live (TinyFish) → Verify (Gemini)**.
+
 ```mermaid
 flowchart TD
   A[Citizen speaks a task<br/>any of 13 languages] --> B[Gemini plans<br/>official site + search query]
-  B --> C[TinyFish Search + Fetch<br/>reads up to 3 official pages]
+  A --> I0[Gemini instant answer<br/>spoken in ~2 s]
+  B --> C[TinyFish Search + Fetch<br/>reads official pages]
   B --> D[TinyFish Search<br/>finds the EXACT page on the site / myScheme]
-  C --> E[Quick answer spoken in ~15 s]
-  D --> F[TinyFish Web Agent opens it<br/>live stream inside the app]
+  C --> E[Answer read from official pages<br/>~15–26 s]
+  D --> F[TinyFish Web Agent opens it<br/>live stream right under the task]
   F --> G{Blocked? 403 / captcha}
   G -- yes --> H[Move to next official page<br/>up to 3 tries]
   H --> F
   G -- no --> I[Structured result<br/>eligibility · documents · steps · link]
-  I --> J[Gemini explains in the citizen's language<br/>'Verified live on the official website']
-  E -.if the agent can't finish.-> J
+  I --> J[Gemini cross-checks its instant answer<br/>against the official page:<br/>'matches' or 'corrected' — read aloud]
+  E -.if the agent can't finish in 3 min.-> J
+  I0 -.compared in.-> J
 ```
 
-- **Deep-link start.** Starting the agent on the exact scheme page instead of a home page cut a live test run from **94 s to 52 s** (same PMAY-Urban task, TinyFish server timestamps).
+**Measured on 22 Oct 2026** (live end-to-end self-test on real APIs, Android app code):
+
+| Step | Time |
+|---|---|
+| Spoken instant answer (Gemini) | ~2 s |
+| Answer read from official pages (TinyFish Search + Fetch → Gemini) | 15–26 s |
+| Live agent finishes on myScheme (PM-KISAN, 16 visible steps) | ~75–105 s |
+| Scam Shield verdict | ~7 s |
+| Help Centres found live (East Delhi) | ~5 s |
+
+The live agent does not always finish (slow government pages); after 3 minutes the app keeps the answer read from official pages, so the citizen is never left empty-handed. When the agent finishes, its live view stays on screen for 10 s with a ✓ DONE badge.
+
+- **Deep-link start.** The agent starts on the exact scheme page instead of a home page, so it reads instead of searching around.
 - **Knows which government sites block cloud browsers.** We tested 20 official hosts. The ones that return 403 or time out (e.g. `beneficiary.nha.gov.in`, `pmjay.gov.in`, `nfsa.gov.in`) are in `CLOUD_BLOCKED` and never chosen; the agent is sent to a reachable official page instead (e.g. `myscheme.gov.in/schemes/ab-pmjay`).
 - **Never stuck, never empty-handed.** If an early step shows 403 / captcha / a blank page, the run is cancelled and restarted on the next official page. A quick Search + Fetch answer from the same official sources is always ready.
 - **Read-only and official-only by design.** Every agent goal says: never log in, never type personal details, never submit forms or pay, and never leave `.gov.in` / `.nic.in` websites.
@@ -95,11 +113,13 @@ flowchart TD
 
 Excerpt of the goal the app sends to the TinyFish Web Agent (`buildGoal` in `liveIntel.js`):
 ```text
-You are already on the official page that should contain the answer. Work fast:
+The citizen is WATCHING this browser live on their phone, so browse visibly and steadily:
+scroll down through the page and open each relevant section one by one so they can follow
+along. Stay focused on this task — about 10 to 20 actions — and do not wander to unrelated pages.
 1. If a pop-up, cookie banner or language selector appears, close it.
-2. Read the page. Scroll down. If it has tabs (Benefits, Eligibility, Documents Required,
-   Application Process, FAQ), click each relevant tab and read it.
-3. Only if this page does not answer the task, click at most ONE relevant link on the same site.
+2. Scroll through the whole page. Open and read each section that answers the task, one at a
+   time: Details, Benefits, Eligibility, Exclusions, Application Process, Documents Required.
+3. Open ONE more official page only if the documents or how-to-apply steps are missing here.
 4. Never log in, never type personal details, never submit forms, never pay, and never
    leave official .gov.in / .nic.in websites.
 Return JSON: title, summary, eligibility, benefits, documents[], steps[], fees, helpline, official_link.
@@ -126,7 +146,7 @@ If the page shows 403 / Forbidden / a captcha / stays blank, return {"blocked": 
 |---|---|
 | App | React Native 0.86 · React 19.2 · **Expo SDK 57** |
 | Navigation | React Navigation 7 (bottom tabs + native stack) |
-| AI | Google Gemini `gemini-3.5-flash-lite` (text, image and audio in one API) |
+| AI | Google Gemini `gemini-3.5-flash-lite` (text, image and audio in one API), with automatic failover to `gemini-flash-lite-latest` → `gemini-3-flash-preview` → `gemini-flash-latest` → `gemini-3.8-flash` when a model is busy |
 | Live web | TinyFish Agent, Search & Fetch APIs · `react-native-webview` for the live view |
 | Voice | `expo-audio` (recording) · `expo-speech` (text-to-speech) |
 | Device | `expo-image-picker` (camera) · `expo-location` (GPS) · `expo-file-system` |
@@ -142,10 +162,11 @@ src/screens/               Home, Scheme Navigator, Legal Companion, Document Sim
 src/services/geminiApi.js  Gemini client (text, image, audio, JSON) with retry
 src/services/tinyfishApi.js TinyFish Agent / Search / Fetch client (+ demo mode)
 src/services/liveIntel.js  Verify Live, Scam Shield, Help Centres, Live Updates, Sahayak Live
-src/components/            AgentLiveView (live browser), LiveCard, chat UI
+src/components/            AgentLiveView (live browser), PipelineStrip (Gemini × TinyFish steps), LiveCard, chat UI
 src/utils/                 voiceRecorder, speaker, language helpers, chat storage
 src/data/                  schemes, legal scenarios, 13-language translations
 scripts/diagnose-sahayak.sh  checks Gemini + all 3 TinyFish APIs from the terminal
+scripts/selftest.cjs       live end-to-end test of the real app services (see below)
 ```
 
 ## Setup
@@ -170,6 +191,13 @@ Without keys the app runs in **demo mode** with sample data, so it never breaks 
 
 **Check the APIs:** `bash scripts/diagnose-sahayak.sh` (prints only HTTP status, never your keys).
 
+**Live self-test:** runs the app's real Gemini + TinyFish code in Node with your `.env` keys — every Gemini model, TinyFish Search / Fetch / Agent, task planning, full Sahayak Live runs (English + Hindi), Scam Shield, Help Centres, Live Updates and Verify Live — and saves `scripts/selftest-report.json`.
+```bash
+node scripts/selftest.cjs            # full, ~6 min
+node scripts/selftest.cjs --quick    # ~2 min
+node scripts/selftest.cjs --sahayak  # only the live-agent tasks
+```
+
 ## Build the Android APK
 
 ```bash
@@ -185,8 +213,20 @@ EAS prints a download link / QR code for the `.apk` when the build finishes.
 |---|---|
 | Expo Go says *incompatible SDK* | Install Expo Go for SDK 57 (press `a` in the Expo terminal with the phone connected). |
 | `failed to start tunnel` | Skip `--tunnel`; put phone and computer on the same Wi-Fi / hotspot. |
-| Gemini `503` | Google's servers are busy — the app retries automatically; try again in a minute. |
+| Gemini `503` | Google's servers are busy — the app moves to the next Gemini model automatically. |
+| Gemini `404 … no longer available` | That model was retired; it is skipped automatically (the 2.5 models were removed from the list). |
 | TinyFish `403 … custom max steps` | Custom `agent_config` needs TinyFish beta access; the app already sends only supported fields. |
+
+## Business model
+**₹0 for citizens, always — no ads, no data sale.** Revenue comes from the people who serve citizens:
+
+| Stream | Who pays | Price |
+|---|---|---|
+| CSC Pro (main) | Common Service Centre operators | ₹499 / month per centre (~₹17 a day) |
+| District licence | District administration / DLSA | ₹3 lakh / year per district |
+| CSR & grants | CSR and digital-inclusion funds | Sponsored free seats for NGOs, ASHA and legal-aid volunteers |
+
+Market: TAM ≈ ₹324 Cr / year (5,01,731 CSCs + ~800 districts) · SAM ≈ ₹66 Cr · first-year target ≈ ₹3.3 Cr (1% of CSCs + 10 districts). Price and adoption are assumptions to be validated in the pilot.
 
 ## Roadmap
 Pilot with CSCs, NGOs and DLSA → WhatsApp bot and IVR/SMS for feature phones → all 22 scheduled languages, iOS and consent-based form filling.
