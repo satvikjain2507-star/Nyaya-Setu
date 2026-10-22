@@ -61,7 +61,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>न्याय सेतु · {t("appName")}</Text>
+              <Text style={styles.badgeText}>न्याय सेतु · Nyaya Setu</Text>
             </View>
             <TouchableOpacity style={styles.langChip} onPress={() => navigation.getParent()?.navigate("SettingsTab")} activeOpacity={0.8}>
               <Text style={styles.langChipText}>🌐 {langLabel} ▾</Text>
