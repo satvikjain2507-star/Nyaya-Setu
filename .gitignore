@@ -8,3 +8,4 @@ dist/
 .DS_Store
 _backup_before_fix/
 scripts/selftest-report.json
+scripts/selftest/selftest-report.json
