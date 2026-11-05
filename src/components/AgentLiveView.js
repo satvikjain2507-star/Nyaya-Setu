@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, TouchableOpacity, Modal, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, Pressable, Modal, useWindowDimensions } from "react-native";
 import { WebView } from "react-native-webview";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
+import { Feather } from "@expo/vector-icons";
+import { useLanguage } from "../context/LanguageContext";
 import { LiveDot } from "./LiveCard";
 
 // Makes TinyFish's live stream page fill the frame (it is designed for a desktop iframe).
 const FIT_JS = `
 (function(){
-  var css = 'html,body{margin:0!important;padding:0!important;background:#160D19!important;overflow:hidden!important;height:100%!important;width:100%!important}' +
+  var css = 'html,body{margin:0!important;padding:0!important;background:#0B0B0C!important;overflow:hidden!important;height:100%!important;width:100%!important}' +
             'img,video,canvas,iframe{width:100%!important;height:100%!important;object-fit:contain!important;max-width:100%!important;display:block}';
   var s = document.createElement('style'); s.innerHTML = css; document.head && document.head.appendChild(s);
   var m = document.querySelector('meta[name=viewport]');
@@ -48,6 +50,7 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
   const [webError, setWebError] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const { width, height } = useWindowDimensions();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -73,29 +76,46 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
   }, [running, streamingUrl]);
   const showStream = streamingUrl && !webError && (running || grace);
   // 16:10 frame (desktop browser shape) so the page is not squashed
-  const frameH = Math.round((width - SPACING.lg * 2) * 0.62);
+  const frameH = Math.round((width - 40) * 0.62);
+
+  const last = steps.slice(-3);
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  // finished and the stream is gone: one quiet summary line instead of an empty frame
+  if (!running && !showStream) {
+    return (
+      <View style={styles.doneRow}>
+        <View style={styles.doneIcon}>
+          <Feather name="check" size={14} color={COLORS.white} />
+        </View>
+        <Text style={styles.doneText} numberOfLines={1}>
+          {t("stepDone")}
+          {siteName ? ` · ${siteName}` : ""}
+        </Text>
+        <Text style={styles.doneMeta}>
+          {steps.length ? `${steps.length} steps · ` : ""}
+          {fmt(secs)}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>
       <View style={styles.frame}>
         <View style={styles.frameBar}>
-          <View style={styles.dots}>
-            <View style={[styles.dot, { backgroundColor: "#FF5F57" }]} />
-            <View style={[styles.dot, { backgroundColor: "#FEBC2E" }]} />
-            <View style={[styles.dot, { backgroundColor: "#28C840" }]} />
-          </View>
+          <Feather name="lock" size={12} color={COLORS.ink400} />
           <Text style={styles.urlText} numberOfLines={1}>
-            🔒 {siteName || "official website"}
+            {siteName || "official website"}
           </Text>
-          {running && (
+          {running ? (
             <View style={styles.liveBadge}>
               <LiveDot color="#fff" size={6} />
               <Text style={styles.liveBadgeText}>LIVE</Text>
             </View>
-          )}
-          {!running && showStream && (
+          ) : (
             <View style={[styles.liveBadge, { backgroundColor: COLORS.teal }]}>
-              <Text style={styles.liveBadgeText}>✓ DONE</Text>
+              <Feather name="check" size={11} color="#fff" />
             </View>
           )}
         </View>
@@ -104,46 +124,30 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
           {showStream ? (
             <>
               <LiveStream url={streamingUrl} onError={() => setWebError(true)} />
-              <TouchableOpacity style={styles.expandBtn} onPress={() => setExpanded(true)} activeOpacity={0.8}>
-                <Text style={styles.expandText}>⤢  Enlarge</Text>
-              </TouchableOpacity>
+              <Pressable style={styles.expandBtn} onPress={() => setExpanded(true)}>
+                <Feather name="maximize-2" size={15} color="#fff" />
+              </Pressable>
             </>
           ) : (
-            <Placeholder
-              scan={scan}
-              text={
-                !running
-                  ? status === "FALLBACK"
-                    ? "Answer ready from official government pages ✓"
-                    : "Done on the official website ✓"
-                  : demo
-                  ? "Demo mode — add your TinyFish key to watch the real browser"
-                  : streamingUrl && webError
-                  ? "Live view unavailable — the agent is still working"
-                  : "Opening the official website in a secure cloud browser…"
-              }
-            />
+            <View style={styles.placeholder}>
+              <ActivityIndicator color="#fff" />
+              <Text style={styles.placeholderText}>{demo ? "Demo mode" : t("workingTitle")}</Text>
+            </View>
           )}
         </View>
       </View>
 
       <View style={styles.timeline}>
         <View style={styles.timelineHead}>
-          <Text style={styles.timelineTitle}>What the agent is doing{steps.length ? ` · step ${steps.length}` : ""}</Text>
-          <Text style={styles.timer}>⏱ {secs}s{running ? " · browsing official pages" : ""}</Text>
+          <Text style={styles.timelineTitle}>{t("stepBrowse")}</Text>
+          <Text style={styles.timer}>{fmt(secs)}</Text>
         </View>
-        {steps.length === 0 && running && (
-          <View style={styles.stepRow}>
-            <ActivityIndicator size="small" color={COLORS.gold} />
-            <Text style={styles.stepText}>Starting a secure cloud browser (takes ~20 s)…</Text>
-          </View>
-        )}
-        {steps.slice(-6).map((s, i, arr) => {
+        {last.map((s, i, arr) => {
           const isLast = i === arr.length - 1;
           return (
-            <View key={`${i}-${s.action}`} style={styles.stepRow}>
-              {isLast && running ? <ActivityIndicator size="small" color={COLORS.gold} /> : <Text style={styles.check}>✓</Text>}
-              <Text style={[styles.stepText, isLast && running && { color: COLORS.ink900, fontWeight: "600" }]} numberOfLines={2}>
+            <View key={`${steps.length - arr.length + i}-${s.action}`} style={styles.stepRow}>
+              {isLast && running ? <ActivityIndicator size="small" color={COLORS.ink} style={{ width: 16 }} /> : <Feather name="check" size={15} color={COLORS.teal} style={{ width: 16 }} />}
+              <Text style={[styles.stepText, isLast && running && { color: COLORS.ink }]} numberOfLines={1}>
                 {s.action}
               </Text>
             </View>
@@ -151,64 +155,46 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
         })}
       </View>
 
-      {/* Enlarged live view */}
       <Modal visible={expanded && !!showStream} animationType="fade" transparent onRequestClose={() => setExpanded(false)}>
         <View style={styles.modalBg}>
           <View style={[styles.modalFrame, { height: Math.min(height * 0.8, width * 1.6) }]}>
             <View style={styles.frameBar}>
               <LiveDot color="#E5484D" size={7} />
-              <Text style={[styles.urlText, { marginLeft: 6 }]} numberOfLines={1}>
+              <Text style={styles.urlText} numberOfLines={1}>
                 {siteName}
               </Text>
-              <TouchableOpacity onPress={() => setExpanded(false)} style={styles.closeBtn}>
-                <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
+              <Pressable onPress={() => setExpanded(false)} hitSlop={10}>
+                <Feather name="x" size={20} color={COLORS.ink} />
+              </Pressable>
             </View>
             <View style={{ flex: 1 }}>{showStream && <LiveStream url={streamingUrl} onError={() => setWebError(true)} />}</View>
           </View>
-          <Text style={styles.modalHint}>Live view of the official website — the AI is browsing for you</Text>
         </View>
       </Modal>
     </View>
   );
 }
 
-function Placeholder({ text, scan }) {
-  const translateY = scan.interpolate({ inputRange: [0, 1], outputRange: [0, 200] });
-  return (
-    <View style={styles.placeholder}>
-      <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
-      <Text style={styles.fish}>🐟</Text>
-      <Text style={styles.placeholderText}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  frame: { borderRadius: RADIUS.md, overflow: "hidden", backgroundColor: COLORS.inkDeep, borderWidth: 1, borderColor: COLORS.inkSoft },
-  frameBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: SPACING.md, paddingVertical: 8, backgroundColor: COLORS.ink, gap: SPACING.sm },
-  dots: { flexDirection: "row", gap: 5 },
-  dot: { width: 9, height: 9, borderRadius: 5 },
-  urlText: { flex: 1, color: "#D9CFE0", fontSize: 12, backgroundColor: COLORS.inkSoft, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 },
-  liveBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#E5484D", borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
-  liveBadgeText: { color: "#fff", fontWeight: "900", fontSize: 10, letterSpacing: 0.8 },
-  screen: { backgroundColor: COLORS.inkDeep },
-  expandBtn: { position: "absolute", right: 8, bottom: 8, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  expandText: { color: "#fff", fontWeight: "800", fontSize: 12 },
-  placeholder: { flex: 1, alignItems: "center", justifyContent: "center", overflow: "hidden", paddingHorizontal: SPACING.lg },
-  scanLine: { position: "absolute", top: 0, left: 0, right: 0, height: 2, backgroundColor: COLORS.gold, opacity: 0.6 },
-  fish: { fontSize: 34 },
-  placeholderText: { color: "#D9CFE0", marginTop: SPACING.sm, fontSize: 13, textAlign: "center" },
-  timeline: { marginTop: SPACING.md, backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
+  frame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.ink, borderWidth: 1, borderColor: COLORS.border },
+  frameBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, backgroundColor: COLORS.surface, gap: 8 },
+  urlText: { flex: 1, fontFamily: FONT.semibold, color: COLORS.ink600, fontSize: 12.5 },
+  liveBadge: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#E5484D", borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 },
+  liveBadgeText: { fontFamily: FONT.bold, color: "#fff", fontSize: 10, letterSpacing: 1 },
+  screen: { backgroundColor: COLORS.ink },
+  expandBtn: { position: "absolute", right: 10, bottom: 10, width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
+  placeholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  placeholderText: { fontFamily: FONT.medium, color: "#BDBDC4", fontSize: 13.5 },
+  timeline: { marginTop: 12, paddingHorizontal: 2 },
   timelineHead: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  timelineTitle: { fontWeight: "800", color: COLORS.ink, fontSize: 12.5, textTransform: "uppercase", letterSpacing: 0.5 },
-  timer: { color: COLORS.midGray, fontSize: 12 },
-  stepRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm, paddingVertical: 5 },
-  check: { color: COLORS.teal, fontWeight: "900", width: 20, textAlign: "center" },
-  stepText: { flex: 1, color: COLORS.darkGray, fontSize: 13 },
-  modalBg: { flex: 1, backgroundColor: "rgba(10,6,12,0.92)", justifyContent: "center", paddingHorizontal: 10 },
-  modalFrame: { borderRadius: RADIUS.md, overflow: "hidden", backgroundColor: COLORS.inkDeep },
-  closeBtn: { paddingHorizontal: 8, paddingVertical: 2 },
-  closeText: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  modalHint: { color: "#D9CFE0", textAlign: "center", marginTop: 12, fontSize: 12.5 },
+  timelineTitle: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 14 },
+  timer: { fontFamily: FONT.semibold, color: COLORS.ink400, fontSize: 13 },
+  stepRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 5 },
+  stepText: { flex: 1, fontFamily: FONT.medium, color: COLORS.ink400, fontSize: 13.5 },
+  doneRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.surface, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12 },
+  doneIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.teal, alignItems: "center", justifyContent: "center" },
+  doneText: { flex: 1, fontFamily: FONT.semibold, color: COLORS.ink, fontSize: 14 },
+  doneMeta: { fontFamily: FONT.medium, color: COLORS.ink400, fontSize: 12.5 },
+  modalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", paddingHorizontal: 10 },
+  modalFrame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.ink },
 });

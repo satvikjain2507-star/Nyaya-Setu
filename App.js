@@ -1,10 +1,19 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from "@expo-google-fonts/plus-jakarta-sans";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import SchemeNavigatorScreen from "./src/screens/SchemeNavigatorScreen";
@@ -16,20 +25,23 @@ import VisualSolverScreen from "./src/screens/VisualSolverScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import SahayakLiveScreen from "./src/screens/SahayakLiveScreen";
 import ScamShieldScreen from "./src/screens/ScamShieldScreen";
-import { COLORS, RADIUS } from "./src/constants/theme";
+import { COLORS, FONT } from "./src/constants/theme";
 import { LanguageProvider, useLanguage } from "./src/context/LanguageContext";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const NAV_THEME = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: COLORS.bg, card: COLORS.bg, border: COLORS.border, primary: COLORS.ink } };
+
 const HEADER_OPTIONS = {
-  headerStyle: { backgroundColor: COLORS.ink },
-  headerTintColor: COLORS.white,
-  headerTitleStyle: { fontWeight: "700", fontSize: 18 },
+  headerStyle: { backgroundColor: COLORS.bg },
+  headerTintColor: COLORS.ink,
+  headerTitleStyle: { fontFamily: FONT.bold, fontSize: 18 },
   headerShadowVisible: false,
+  headerBackButtonDisplayMode: "minimal",
 };
 
-// Home tab has its own internal stack so it can push into Help Centers
+// Home tab has its own stack so it can push into each tool
 function HomeStack() {
   const { t } = useLanguage();
   return (
@@ -46,52 +58,29 @@ function HomeStack() {
   );
 }
 
-const ICONS = {
-  HomeTab: "🏠",
-  SchemeTab: "📋",
-  LiveTab: "🛰️",
-  LegalTab: "⚖️",
-  DocumentTab: "📄",
-  SettingsTab: "⚙️",
+const ICON = {
+  HomeTab: (c) => <Feather name="home" size={22} color={c} />,
+  SchemeTab: (c) => <Feather name="layers" size={22} color={c} />,
+  LegalTab: (c) => <MaterialCommunityIcons name="scale-balance" size={23} color={c} />,
+  SettingsTab: (c) => <Feather name="settings" size={22} color={c} />,
 };
 
-function TabIcon({ symbol, focused, live }) {
-  if (live) {
-    return (
-      <View
-        style={{
-          width: 52,
-          height: 52,
-          marginTop: -18,
-          borderRadius: 26,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: focused ? COLORS.gold : COLORS.ink,
-          borderWidth: 3,
-          borderColor: COLORS.white,
-          elevation: 6,
-          shadowColor: COLORS.inkDeep,
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
-          shadowOffset: { width: 0, height: 3 },
-        }}
-      >
-        <Text style={{ fontSize: 22 }}>{symbol}</Text>
-      </View>
-    );
-  }
+function LiveTabIcon({ focused }) {
   return (
     <View
       style={{
-        width: 40,
-        height: 32,
-        borderRadius: RADIUS.pill,
+        width: 54,
+        height: 54,
+        marginTop: -20,
+        borderRadius: 27,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: focused ? COLORS.goldSoft : "transparent",
+        backgroundColor: focused ? COLORS.gold : COLORS.ink,
+        borderWidth: 4,
+        borderColor: COLORS.bg,
       }}
     >
-      <Text style={{ fontSize: 19, opacity: focused ? 1 : 0.55 }}>{symbol}</Text>
+      <Feather name="mic" size={22} color={COLORS.white} />
     </View>
   );
 }
@@ -103,38 +92,47 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: COLORS.gold,
-        tabBarInactiveTintColor: COLORS.midGray,
+        tabBarActiveTintColor: COLORS.ink,
+        tabBarInactiveTintColor: "#9A9AA1",
         tabBarStyle: {
-          backgroundColor: COLORS.white,
+          backgroundColor: COLORS.bg,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom + 6,
-          paddingTop: 6,
+          height: 66 + insets.bottom,
+          paddingBottom: insets.bottom + 10,
+          paddingTop: 8,
+          elevation: 0,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
-        tabBarIcon: ({ focused }) => <TabIcon symbol={ICONS[route.name]} focused={focused} live={route.name === "LiveTab"} />,
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONT.semibold },
+        tabBarIcon: ({ focused, color }) => (route.name === "LiveTab" ? <LiveTabIcon focused={focused} /> : ICON[route.name](color)),
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: t("home") }} />
-      <Tab.Screen name="SchemeTab" component={SchemeNavigatorScreen} options={{ title: t("schemeNavigator"), headerShown: true, ...HEADER_OPTIONS }} />
-      <Tab.Screen name="LiveTab" component={SahayakLiveScreen} options={{ title: t("liveTab") }} />
-      <Tab.Screen name="LegalTab" component={LegalCompanionScreen} options={{ title: t("legalCompanion"), headerShown: true, ...HEADER_OPTIONS }} />
+      <Tab.Screen name="SchemeTab" component={SchemeNavigatorScreen} options={{ title: t("tabSchemes"), headerShown: true, ...HEADER_OPTIONS, headerTitle: t("schemeNavigator") }} />
+      <Tab.Screen name="LiveTab" component={SahayakLiveScreen} options={{ title: t("tabLive") }} />
+      <Tab.Screen name="LegalTab" component={LegalCompanionScreen} options={{ title: t("tabLegal"), headerShown: true, ...HEADER_OPTIONS, headerTitle: t("legalCompanion") }} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ title: t("settings"), headerShown: true, ...HEADER_OPTIONS }} />
     </Tab.Navigator>
   );
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
+  if (!fontsLoaded) return null;
   return (
     <SafeAreaProvider>
-    <LanguageProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Tabs />
-      </NavigationContainer>
-    </LanguageProvider>
+      <LanguageProvider>
+        <NavigationContainer theme={NAV_THEME}>
+          <StatusBar style="dark" />
+          <Tabs />
+        </NavigationContainer>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

@@ -80,7 +80,7 @@ export default function LegalCompanionScreen() {
         if (!base64) return;
 
         const userMsgId = Date.now().toString();
-        appendMessage({ id: userMsgId, role: "user", text: "🎤 (voice message)" });
+        appendMessage({ id: userMsgId, role: "user", text: "Voice message" });
         const loadingId = userMsgId + "-loading";
         appendMessage({ id: loadingId, role: "bot", loading: true });
 

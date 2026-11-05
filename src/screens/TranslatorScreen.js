@@ -1,9 +1,10 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 import React, { useState, useCallback, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Modal, Pressable, Share } from "react-native";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
 import { geminiTranslate, geminiTranslateVoice } from "../services/geminiApi";
 import { LANGUAGES } from "../data/translations";
@@ -109,8 +110,8 @@ export default function TranslatorScreen() {
         <ScrollView ref={scrollRef} style={styles.body} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
           {!sourceText && !loading && (
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>🗣️ → 🌐</Text>
-              <Text style={styles.emptyText}>Speak 🎤 or type in any of 13 Indian languages. The translation is shown and read aloud.</Text>
+              <Feather name="globe" size={30} color={COLORS.ink} />
+              <Text style={styles.emptyText}>Speak or type in any of 13 Indian languages.</Text>
               <View style={styles.chips}>
                 {LANGUAGES.map((l) => (
                   <TouchableOpacity key={l.code} style={[styles.chip, to.code === l.code && styles.chipOn]} onPress={() => setTo(l)}>
@@ -144,7 +145,7 @@ export default function TranslatorScreen() {
                   <Text style={styles.playBtnText}>{t("playAloud")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.playBtn, styles.shareBtn]} onPress={() => Share.share({ message: resultText }).catch(() => {})}>
-                  <Text style={[styles.playBtnText, { color: COLORS.ink }]}>📤 Share</Text>
+                  <Text style={[styles.playBtnText, { color: COLORS.ink }]}>Share</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -171,8 +172,8 @@ export default function TranslatorScreen() {
                     setPicker(null);
                   }}
                 >
-                  <Text style={[styles.optionText, on && { color: COLORS.goldDark, fontWeight: "800" }]}>{nameOf(l)}</Text>
-                  {on && <Text style={{ color: COLORS.goldDark, fontWeight: "800" }}>✓</Text>}
+                  <Text style={[styles.optionText, on && { fontFamily: FONT.extrabold, color: COLORS.goldDark, }]}>{nameOf(l)}</Text>
+                  {on && <Text style={{ fontFamily: FONT.extrabold, color: COLORS.goldDark, }}>✓</Text>}
                 </TouchableOpacity>
               );
             })}
@@ -188,31 +189,31 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   langBar: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: COLORS.parchment },
   langBtn: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.sm, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: COLORS.border },
-  langCaption: { fontSize: 10.5, color: COLORS.midGray, fontWeight: "700", textTransform: "uppercase" },
-  langName: { fontSize: 14.5, color: COLORS.ink900, fontWeight: "700", marginTop: 1 },
+  langCaption: { fontFamily: FONT.bold, fontSize: 10.5, color: COLORS.midGray, textTransform: "uppercase" },
+  langName: { fontFamily: FONT.bold, fontSize: 14.5, color: COLORS.ink900, marginTop: 1 },
   swapBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.gold, alignItems: "center", justifyContent: "center" },
-  swapText: { color: COLORS.white, fontSize: 18, fontWeight: "900" },
+  swapText: { fontFamily: FONT.extrabold, color: COLORS.white, fontSize: 18, },
   empty: { alignItems: "center", paddingVertical: 12 },
-  emptyIcon: { fontSize: 30 },
-  emptyText: { color: COLORS.darkGray, fontSize: 13.5, textAlign: "center", marginTop: 8, lineHeight: 19, paddingHorizontal: 12 },
+  emptyIcon: { fontFamily: FONT.regular, fontSize: 30 },
+  emptyText: { fontFamily: FONT.regular, color: COLORS.darkGray, fontSize: 13.5, textAlign: "center", marginTop: 8, lineHeight: 19, paddingHorizontal: 12 },
   chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 14 },
   chip: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: COLORS.parchment },
   chipOn: { backgroundColor: COLORS.gold, borderColor: COLORS.gold },
-  chipText: { fontSize: 13, color: COLORS.darkGray },
-  chipTextOn: { color: COLORS.white, fontWeight: "800" },
+  chipText: { fontFamily: FONT.regular, fontSize: 13, color: COLORS.darkGray },
+  chipTextOn: { fontFamily: FONT.extrabold, color: COLORS.white, },
   sourceBox: { backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 14, marginBottom: 12 },
-  sourceLabel: { fontSize: 11, color: COLORS.midGray, fontWeight: "bold", textTransform: "uppercase", marginBottom: 4 },
-  sourceText: { fontSize: 14.5, color: COLORS.darkGray },
+  sourceLabel: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.midGray, textTransform: "uppercase", marginBottom: 4 },
+  sourceText: { fontFamily: FONT.regular, fontSize: 14.5, color: COLORS.darkGray },
   resultBox: { backgroundColor: "#FFF7F0", borderRadius: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.orange },
-  resultLabel: { fontSize: 11, color: COLORS.goldDark, fontWeight: "bold", textTransform: "uppercase", marginBottom: 4 },
-  resultText: { fontSize: 17, color: COLORS.black, lineHeight: 25 },
+  resultLabel: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.goldDark, textTransform: "uppercase", marginBottom: 4 },
+  resultText: { fontFamily: FONT.regular, fontSize: 17, color: COLORS.black, lineHeight: 25 },
   playBtn: { backgroundColor: COLORS.orange, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   shareBtn: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  playBtnText: { color: COLORS.white, fontWeight: "bold", fontSize: 12.5 },
+  playBtnText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 12.5 },
   backdrop: { flex: 1, backgroundColor: "rgba(22,13,25,0.45)" },
   sheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.lg, paddingBottom: SPACING.xl + 8 },
-  sheetTitle: { fontSize: 16, fontWeight: "800", color: COLORS.ink900, marginBottom: SPACING.sm },
+  sheetTitle: { fontFamily: FONT.extrabold, fontSize: 16, color: COLORS.ink900, marginBottom: SPACING.sm },
   option: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   optionOn: { backgroundColor: COLORS.goldSoft, borderRadius: 8 },
-  optionText: { fontSize: 15, color: COLORS.ink900 },
+  optionText: { fontFamily: FONT.regular, fontSize: 15, color: COLORS.ink900 },
 });

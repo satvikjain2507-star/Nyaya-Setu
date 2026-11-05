@@ -1,11 +1,12 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from "react-native";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { Feather } from "@expo/vector-icons";
 
 const OPTIONS = [
-  { key: "camera", icon: "📷", title: "Take a photo", sub: "Use the camera now" },
-  { key: "gallery", icon: "🖼️", title: "Choose from gallery", sub: "Photos, screenshots, WhatsApp images" },
-  { key: "file", icon: "📄", title: "Upload a PDF or file", sub: "From Downloads, WhatsApp or Files" },
+  { key: "camera", icon: "camera", title: "Take a photo" },
+  { key: "gallery", icon: "image", title: "Choose from gallery" },
+  { key: "file", icon: "file", title: "Upload a PDF or file" },
 ];
 
 /** Bottom sheet: camera · gallery · PDF/file. */
@@ -27,11 +28,10 @@ export default function AttachSheet({ visible, onClose, onPick, title = "Add a p
             }}
           >
             <View style={styles.iconWrap}>
-              <Text style={styles.icon}>{o.icon}</Text>
+              <Feather name={o.icon} size={20} color={COLORS.ink} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{o.title}</Text>
-              <Text style={styles.rowSub}>{o.sub}</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -44,15 +44,15 @@ export default function AttachSheet({ visible, onClose, onPick, title = "Add a p
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(22,13,25,0.45)" },
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   sheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.lg, paddingBottom: SPACING.xl + 8 },
   handle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: COLORS.border, marginBottom: SPACING.md },
-  title: { fontSize: 16, fontWeight: "800", color: COLORS.ink900, marginBottom: SPACING.sm },
-  row: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.goldSoft, alignItems: "center", justifyContent: "center" },
-  icon: { fontSize: 20 },
-  rowTitle: { fontSize: 15, fontWeight: "700", color: COLORS.ink900 },
-  rowSub: { fontSize: 12.5, color: COLORS.midGray, marginTop: 2 },
+  title: { fontFamily: FONT.extrabold, fontSize: 18, color: COLORS.ink900, marginBottom: SPACING.sm },
+  row: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: 14 },
+  iconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: COLORS.surface, alignItems: "center", justifyContent: "center" },
+  icon: { fontFamily: FONT.regular, fontSize: 20 },
+  rowTitle: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.ink900 },
+  rowSub: { fontFamily: FONT.regular, fontSize: 12.5, color: COLORS.midGray, marginTop: 2 },
   cancel: { marginTop: SPACING.md, alignItems: "center", paddingVertical: SPACING.sm },
-  cancelText: { color: COLORS.rose, fontWeight: "700", fontSize: 14.5 },
+  cancelText: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 15 },
 });

@@ -10,12 +10,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FlatList, StyleSheet, Alert, View, Text, TouchableOpacity, ScrollView, Linking } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import ChatItem from "../components/ChatItem";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
 import StopSpeaking from "../components/StopSpeaking";
 import { openLink } from "../components/LiveCard";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
 import { scamCheck } from "../services/liveIntel";
 import { geminiChatWithImage, geminiTranscribe, isAiBusy } from "../services/geminiApi";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
@@ -131,7 +132,7 @@ export default function ScamShieldScreen() {
         const text = await geminiTranscribe(base64, "audio/m4a");
         setBusy(false);
         if (!text?.trim()) return Alert.alert("Couldn't hear that clearly", "Please try again, or paste the message text.");
-        check(text, `🎤 "${text}"`);
+        check(text, `"${text}"`);
       } catch (err) {
         setBusy(false);
         console.warn("Failed to process recording:", err);
@@ -146,14 +147,18 @@ export default function ScamShieldScreen() {
 
   const renderItem = ({ item }) => {
     if (item.kind === "flags") {
+      const ok = !item.flags.length;
       return (
-        <View style={[styles.flagCard, !item.flags.length && styles.flagCardOk]}>
-          <Text style={[styles.flagTitle, !item.flags.length && { color: COLORS.teal }]}>
-            {item.flags.length ? `⚠️ ${item.flags.length} warning sign${item.flags.length > 1 ? "s" : ""} spotted instantly` : "🔍 No obvious warning signs — checking live…"}
-          </Text>
+        <View style={[styles.flagCard, ok && styles.flagCardOk]}>
+          <View style={styles.flagHead}>
+            <Feather name={ok ? "search" : "alert-triangle"} size={16} color={ok ? COLORS.teal : COLORS.amber} />
+            <Text style={[styles.flagTitle, ok && { color: COLORS.teal }]}>
+              {ok ? "No obvious warning signs. Checking live…" : `${item.flags.length} warning sign${item.flags.length > 1 ? "s" : ""} found`}
+            </Text>
+          </View>
           {item.flags.map((f, i) => (
             <Text key={i} style={styles.flagItem}>
-              • {f}
+              {f}
             </Text>
           ))}
         </View>
@@ -165,45 +170,35 @@ export default function ScamShieldScreen() {
   const Header = (
     <View>
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>🛡️ {t("scamShield")}</Text>
-        <Text style={styles.heroSub}>{t("scamShieldHero")}</Text>
+        <Text style={styles.heroTitle}>{t("scamHeroTitle")}</Text>
+        <Text style={styles.heroSub}>{t("scamHeroSub")}</Text>
         <View style={styles.heroBtns}>
           <TouchableOpacity style={styles.heroBtn} onPress={() => Linking.openURL("tel:1930")}>
-            <Text style={styles.heroBtnText}>📞 1930 Helpline</Text>
+            <Feather name="phone" size={15} color={COLORS.white} />
+            <Text style={styles.heroBtnText}>Call 1930</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.heroBtn, styles.heroBtnGhost]} onPress={() => openLink("https://cybercrime.gov.in")}>
-            <Text style={[styles.heroBtnText, { color: COLORS.white }]}>🌐 cybercrime.gov.in</Text>
+            <Feather name="globe" size={15} color={COLORS.ink} />
+            <Text style={[styles.heroBtnText, { color: COLORS.ink }]}>Report online</Text>
           </TouchableOpacity>
         </View>
       </View>
       {messages.length === 0 && (
-        <View style={{ paddingHorizontal: SPACING.lg }}>
-          <Text style={styles.howTitle}>{t("scamHow")}</Text>
-          <View style={styles.howRow}>
-            {[
-              ["📋", "Paste the SMS"],
-              ["🖼️", "Upload screenshot"],
-              ["🎤", "Speak it"],
-            ].map(([i, l]) => (
-              <View key={l} style={styles.howItem}>
-                <Text style={styles.howIcon}>{i}</Text>
-                <Text style={styles.howLabel}>{l}</Text>
-              </View>
+        <View style={{ paddingHorizontal: 20 }}>
+          <Text style={styles.sectionTitle}>{t("scamSamples")}</Text>
+          <View style={styles.list}>
+            {SCAM_SAMPLES.map((s, i) => (
+              <TouchableOpacity key={s.label} style={[styles.sample, i > 0 && styles.sampleBorder]} onPress={() => !busy && check(s.text)} activeOpacity={0.7}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sampleLabel}>{s.label}</Text>
+                  <Text style={styles.sampleText} numberOfLines={2}>
+                    {s.text}
+                  </Text>
+                </View>
+                <Feather name="arrow-up-right" size={18} color="#A1A1AA" />
+              </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.sectionTitle}>{t("trySample")}</Text>
-          {SCAM_SAMPLES.map((s) => (
-            <TouchableOpacity key={s.label} style={styles.sample} onPress={() => !busy && check(s.text)} activeOpacity={0.85}>
-              <Text style={styles.sampleIcon}>{s.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sampleLabel}>{s.label}</Text>
-                <Text style={styles.sampleText} numberOfLines={2}>
-                  {s.text}
-                </Text>
-              </View>
-              <Text style={styles.go}>›</Text>
-            </TouchableOpacity>
-          ))}
         </View>
       )}
     </View>
@@ -221,7 +216,8 @@ export default function ScamShieldScreen() {
           ListFooterComponent={
             messages.length > 0 && !busy ? (
               <TouchableOpacity onPress={clearAll} style={styles.clear}>
-                <Text style={styles.clearText}>＋ Check another message</Text>
+                <Feather name="plus" size={17} color={COLORS.white} />
+                <Text style={styles.clearText}>{t("scamAnother")}</Text>
               </TouchableOpacity>
             ) : null
           }
@@ -245,29 +241,25 @@ export default function ScamShieldScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.parchment },
-  hero: { backgroundColor: COLORS.ink, margin: SPACING.md, borderRadius: RADIUS.md, padding: SPACING.lg, borderWidth: 1.5, borderColor: COLORS.rose },
-  heroTitle: { color: COLORS.white, fontSize: 21, fontWeight: "800" },
-  heroSub: { color: "#D9CFE0", fontSize: 13, lineHeight: 19, marginTop: 6 },
-  heroBtns: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.md, flexWrap: "wrap" },
-  heroBtn: { backgroundColor: COLORS.rose, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 },
-  heroBtnGhost: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#D9CFE0" },
-  heroBtnText: { color: COLORS.white, fontWeight: "800", fontSize: 12.5 },
-  howTitle: { fontSize: 12.5, fontWeight: "800", color: COLORS.ink, textTransform: "uppercase", letterSpacing: 0.6, marginTop: SPACING.xs },
-  howRow: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.sm, marginBottom: SPACING.lg },
-  howItem: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.sm, paddingVertical: SPACING.md, alignItems: "center", borderWidth: 1, borderColor: COLORS.border },
-  howIcon: { fontSize: 22 },
-  howLabel: { fontSize: 11.5, color: COLORS.darkGray, marginTop: 4, fontWeight: "600", textAlign: "center" },
-  sectionTitle: { fontSize: 12.5, fontWeight: "800", color: COLORS.ink, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: SPACING.sm },
-  sample: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm, gap: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
-  sampleIcon: { fontSize: 22 },
-  sampleLabel: { fontSize: 14, fontWeight: "700", color: COLORS.ink900 },
-  sampleText: { fontSize: 12, color: COLORS.midGray, marginTop: 2 },
-  go: { fontSize: 22, color: COLORS.rose, fontWeight: "800" },
-  flagCard: { marginHorizontal: SPACING.md, marginVertical: SPACING.xs + 2, backgroundColor: "#FFF4DC", borderRadius: RADIUS.md, padding: SPACING.md, borderLeftWidth: 4, borderLeftColor: "#A86A00" },
-  flagCardOk: { backgroundColor: COLORS.tealSoft, borderLeftColor: COLORS.teal },
-  flagTitle: { fontWeight: "800", color: "#A86A00", fontSize: 13.5, marginBottom: 4 },
-  flagItem: { fontSize: 13, color: COLORS.darkGray, lineHeight: 19 },
-  clear: { alignSelf: "center", marginTop: SPACING.md, backgroundColor: COLORS.white, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.lg, paddingVertical: 8, borderWidth: 1, borderColor: COLORS.rose },
-  clearText: { color: COLORS.rose, fontWeight: "800" },
+  safe: { flex: 1, backgroundColor: COLORS.bg },
+  hero: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
+  heroTitle: { fontFamily: FONT.extrabold, color: COLORS.ink, fontSize: 28, letterSpacing: -0.6 },
+  heroSub: { fontFamily: FONT.regular, color: COLORS.ink400, fontSize: 15, lineHeight: 21, marginTop: 4 },
+  heroBtns: { flexDirection: "row", gap: 8, marginTop: 16 },
+  heroBtn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: COLORS.rose, borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 42 },
+  heroBtnGhost: { backgroundColor: COLORS.surface },
+  heroBtnText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 14 },
+  sectionTitle: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginBottom: 10 },
+  list: { borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
+  sample: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
+  sampleBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  sampleLabel: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.ink },
+  sampleText: { fontFamily: FONT.regular, fontSize: 13.5, lineHeight: 19, color: COLORS.ink400, marginTop: 3 },
+  flagCard: { marginHorizontal: 16, marginVertical: 6, backgroundColor: COLORS.amberSoft, borderRadius: 20, padding: 16 },
+  flagCardOk: { backgroundColor: COLORS.tealSoft },
+  flagHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+  flagTitle: { fontFamily: FONT.bold, color: COLORS.amber, fontSize: 15 },
+  flagItem: { fontFamily: FONT.regular, fontSize: 14, color: COLORS.ink600, lineHeight: 21, marginTop: 2 },
+  clear: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingHorizontal: 22, height: 48 },
+  clearText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 14.5 },
 });

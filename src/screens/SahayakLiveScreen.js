@@ -6,33 +6,41 @@
  */
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import React, { useRef, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from "react-native";
+import React, { useRef, useState, useCallback, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Share, ActivityIndicator } from "react-native";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import KeyboardAware from "../components/KeyboardAware";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
 import ChatInput from "../components/ChatInput";
 import AgentLiveView from "../components/AgentLiveView";
 import PipelineStrip from "../components/PipelineStrip";
-import { LiveDot, SourceChips, openLink } from "../components/LiveCard";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { SourceChips, openLink } from "../components/LiveCard";
+import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
 import { speak, stopSpeaking } from "../utils/speaker";
 import StopSpeaking from "../components/StopSpeaking";
 import { useLanguage } from "../context/LanguageContext";
 import { runSahayakTask } from "../services/liveIntel";
 import { geminiTranscribe } from "../services/geminiApi";
-import { hasTinyFishKey } from "../services/tinyfishApi";
+import { hasTinyFishKey, hostnameOf } from "../services/tinyfishApi";
 
 const SUGGESTIONS = [
-  { icon: "🌾", text: "Am I eligible for PM-KISAN? What documents do I need?" },
-  { icon: "📱", text: "My phone was stolen today. How do I block it?" },
-  { icon: "🏥", text: "How can my 72-year-old father get an Ayushman card?" },
-  { icon: "🎓", text: "Scholarships for a girl student in class 11 from a poor family" },
-  { icon: "🚨", text: "How do I report a UPI fraud online?" },
-  { icon: "📄", text: "How to file an RTI application online" },
-  { icon: "🛂", text: "How do I apply for a passport?" },
+  { icon: "sprout", text: "Am I eligible for PM-KISAN? What documents do I need?" },
+  { icon: "cellphone-lock", text: "My phone was stolen today. How do I block it?" },
+  { icon: "hospital-box-outline", text: "How can my 72-year-old father get an Ayushman card?" },
+  { icon: "school-outline", text: "Scholarships for a girl student in class 11 from a poor family" },
+  { icon: "alert-octagon-outline", text: "How do I report a UPI fraud online?" },
+  { icon: "passport", text: "How do I apply for a passport?" },
 ];
 
-export default function SahayakLiveScreen() {
+function Tap({ style, children, onPress, disabled }) {
+  return (
+    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [style, pressed && { opacity: 0.72 }]}>
+      {children}
+    </Pressable>
+  );
+}
+
+export default function SahayakLiveScreen({ route }) {
   const { t, geminiLanguageName, speechRate } = useLanguage();
   // stop any reply being read aloud when the user leaves this screen
   useFocusEffect(useCallback(() => () => stopSpeaking(), []));
@@ -158,7 +166,7 @@ export default function SahayakLiveScreen() {
         setPhase("idle");
         if (!text?.trim()) {
           setRequest("");
-          setError("Couldn't understand the voice note (AI busy or no internet). Please tap 🎤 and speak again, or type your task.");
+          setError("Couldn't hear that clearly. Please try again, or type your task.");
           setPhase("error");
           return;
         }
@@ -172,130 +180,133 @@ export default function SahayakLiveScreen() {
 
   const busy = phase === "planning" || phase === "running";
 
-  return (
-    <SafeAreaView edges={["left", "right"]} style={[styles.safe, { paddingTop: insets.top, backgroundColor: COLORS.ink }]}>
-      <KeyboardAware>
-      <ScrollView ref={scrollRef} style={{ backgroundColor: COLORS.parchment }} contentContainerStyle={{ paddingBottom: SPACING.xl }} keyboardShouldPersistTaps="handled">
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={styles.heroTop}>
-            <View style={styles.badge}>
-              <LiveDot color="#E5484D" />
-              <Text style={styles.badgeText}>LIVE AGENT</Text>
-            </View>
-            <Text style={styles.powered}>powered by TinyFish{hasTinyFishKey() ? "" : " · demo"}</Text>
-          </View>
-          <Text style={styles.heroTitle}>{t("sahayakLive")}</Text>
-          <Text style={styles.heroSub}>{t("sahayakLiveHero")}</Text>
-        </View>
+  // a task tapped on the Home screen
+  const lastTs = useRef(null);
+  useEffect(() => {
+    const p = route?.params;
+    if (p?.task && p.ts && p.ts !== lastTs.current) {
+      lastTs.current = p.ts;
+      start(p.task);
+    }
+  }, [route?.params?.ts]);
 
-        <View style={{ paddingHorizontal: SPACING.lg, marginTop: SPACING.lg }}>
-          {/* Idle: suggestions */}
+  const site = plan?.url ? hostnameOf(plan.url) : "";
+  const doneSite = plan?.siteName || site;
+  const status =
+    phase === "done"
+      ? result?.mode === "agent"
+        ? { icon: "check-circle", color: COLORS.teal, text: `${t("ansVerified")} ${doneSite}` }
+        : { icon: "check-circle", color: COLORS.teal, text: t("ansOfficial") }
+      : { spin: true, color: COLORS.ink400, text: result?.mode === "instant" ? `${t("ansQuick")} · ${t("ansVerifying")}` : t("ansVerifying") };
+
+  return (
+    <SafeAreaView edges={["left", "right"]} style={[styles.safe, { paddingTop: insets.top }]}>
+      <KeyboardAware>
+        <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: SPACING.xl }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.title}>{t("sahayakLive")}</Text>
+            {(phase === "idle" || phase === "error") && <Text style={styles.sub}>{t("liveSub")}</Text>}
+          </View>
+
           {(phase === "idle" || phase === "error") && (
-            <>
+            <View style={styles.pad}>
               {phase === "error" && (
                 <View style={styles.errorCard}>
-                  <Text style={styles.errorText}>⚠️ {error}</Text>
-                  <TouchableOpacity onPress={() => (request && !/^🎤/.test(request) ? start(request) : handleMicPress())}>
-                    <Text style={styles.retry}>Try again</Text>
-                  </TouchableOpacity>
+                  <Feather name="alert-circle" size={18} color={COLORS.rose} />
+                  <Text style={styles.errorText}>{error}</Text>
+                  <Tap onPress={() => (request && !/^🎤/.test(request) ? start(request) : handleMicPress())}>
+                    <Text style={styles.retry}>{t("tryAgain")}</Text>
+                  </Tap>
                 </View>
               )}
-              <Text style={styles.sectionTitle}>{t("tryAsking")}</Text>
-              {SUGGESTIONS.map((s) => (
-                <TouchableOpacity key={s.text} style={styles.suggestion} onPress={() => start(s.text)} activeOpacity={0.85}>
-                  <Text style={styles.suggestionIcon}>{s.icon}</Text>
-                  <Text style={styles.suggestionText}>{s.text}</Text>
-                  <Text style={styles.go}>›</Text>
-                </TouchableOpacity>
-              ))}
-              <Text style={styles.howItWorks}>{t("sahayakHow")}</Text>
-            </>
+
+              <Tap style={styles.bigMicWrap} onPress={handleMicPress}>
+                <View style={[styles.bigMic, isRecording && { backgroundColor: COLORS.rose }]}>
+                  <Feather name={isRecording ? "square" : "mic"} size={34} color={COLORS.white} />
+                </View>
+                <Text style={styles.bigMicText}>{isRecording ? t("listening") : t("tapToSpeak")}</Text>
+              </Tap>
+
+              <Text style={styles.section}>{t("popularTitle")}</Text>
+              <View style={styles.list}>
+                {SUGGESTIONS.map((s, i) => (
+                  <Tap key={s.text} style={[styles.row, i > 0 && styles.rowBorder]} onPress={() => start(s.text)}>
+                    <View style={styles.rowIcon}>
+                      <MaterialCommunityIcons name={s.icon} size={19} color={COLORS.ink} />
+                    </View>
+                    <Text style={styles.rowText}>{s.text}</Text>
+                    <Feather name="arrow-up-right" size={18} color="#A1A1AA" />
+                  </Tap>
+                ))}
+              </View>
+            </View>
           )}
 
-          {/* Working / done */}
           {phase !== "idle" && phase !== "error" && (
-            <>
-              <View style={styles.taskCard}>
-                <Text style={styles.taskLabel}>{t("yourTask")}</Text>
-                <Text style={styles.taskText}>{request}</Text>
-                {plan ? (
-                  <Text style={styles.planText}>
-                    🌐 {plan.siteName} · <Text style={{ color: COLORS.teal }}>{plan.url}</Text>
-                  </Text>
-                ) : (
-                  <Text style={styles.planText}>🧠 Planning the best official website…</Text>
-                )}
-              </View>
-
-              {phase === "running" && (
-                <>
-                <AgentLiveView
-                  streamingUrl={live.streamingUrl}
-                  steps={live.steps}
-                  status={live.status}
-                  elapsedMs={live.elapsed}
-                  siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
-                  demo={!hasTinyFishKey()}
-                />
-                <View style={{ height: SPACING.md }} />
-                </>
-              )}
-
-              <PipelineStrip stages={stages} />
-              {phase === "done" && (
-                <View style={{ marginBottom: SPACING.md }}>
-                <AgentLiveView
-                  streamingUrl={live.streamingUrl}
-                  steps={live.steps}
-                  status={live.status}
-                  elapsedMs={live.elapsed}
-                  siteName={plan?.siteName ? `${plan.siteName} — ${plan.url?.replace(/^https?:\/\//, "")}` : ""}
-                  demo={!hasTinyFishKey()}
-                />
+            <View style={styles.pad}>
+              <Text style={styles.request}>{request}</Text>
+              {!!site && (
+                <View style={styles.siteChip}>
+                  <Feather name="lock" size={12} color={COLORS.teal} />
+                  <Text style={styles.siteText}>{site}</Text>
                 </View>
               )}
-              {result && (phase === "done" || phase === "running" || phase === "planning") && (
-                <View style={styles.resultCard}>
-                  <View style={styles.resultHead}>
-                    <Text style={styles.resultBadge}>
-                      {phase !== "done" && result.mode === "instant" ? "🧠 Instant answer · TinyFish agent is now opening the official website to verify it live…" : phase === "running" ? `⚡ ${t("quickAnswer")} · live browser is double-checking on ${plan?.siteName || "the official site"}…` : result.mode === "agent" ? `✅ Verified live on ${plan?.siteName || "the official website"}` : "✅ Read live from official government pages"}
+
+              {phase !== "done" && <PipelineStrip stages={stages} />}
+
+              {phase === "running" && (
+                <View style={{ marginTop: SPACING.md }}>
+                  <AgentLiveView streamingUrl={live.streamingUrl} steps={live.steps} status={live.status} elapsedMs={live.elapsed} siteName={site} demo={!hasTinyFishKey()} />
+                </View>
+              )}
+              {phase === "done" && (
+                <View style={{ marginTop: SPACING.lg }}>
+                  <AgentLiveView streamingUrl={live.streamingUrl} steps={live.steps} status={live.status} elapsedMs={live.elapsed} siteName={site} demo={!hasTinyFishKey()} />
+                </View>
+              )}
+
+              {result && (
+                <View style={styles.card}>
+                  <View style={styles.statusRow}>
+                    {status.spin ? <ActivityIndicator size="small" color={COLORS.ink400} /> : <Feather name={status.icon} size={17} color={status.color} />}
+                    <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
+                      {status.text}
                     </Text>
-                    <TouchableOpacity onPress={() => say(result.answer)}>
-                      <Text style={styles.speaker}>🔊</Text>
-                    </TouchableOpacity>
+                    <Tap onPress={() => say(result.answer)} style={styles.iconBtn}>
+                      <Feather name="volume-2" size={18} color={COLORS.ink} />
+                    </Tap>
                   </View>
+
                   {result.crossCheck && phase === "done" && (
-                    <View style={[styles.cross, result.crossCheck.status === "corrected" && styles.crossFix]}>
-                      <Text style={[styles.crossTitle, result.crossCheck.status === "corrected" && { color: "#A86A00" }]}>
-                        {result.crossCheck.status === "corrected" ? "🔄 Gemini corrected its first answer using the official page" : "🤝 Gemini's answer matches the official page"}
+                    <View style={[styles.cross, result.crossCheck.status === "corrected" && { backgroundColor: COLORS.amberSoft }]}>
+                      <Feather name={result.crossCheck.status === "corrected" ? "refresh-cw" : "check"} size={14} color={result.crossCheck.status === "corrected" ? COLORS.amber : COLORS.teal} />
+                      <Text style={[styles.crossText, { color: result.crossCheck.status === "corrected" ? COLORS.amber : COLORS.teal }]}>
+                        {result.crossCheck.status === "corrected" ? t("crossFix") : t("crossOk")}
                       </Text>
-                      {!!result.crossCheck.note && <Text style={styles.crossNote}>{result.crossCheck.note}</Text>}
                     </View>
                   )}
+
                   <Text style={styles.answer}>{result.answer}</Text>
 
                   {result.eligibility?.length > 0 && (
                     <View style={styles.block}>
-                      <Text style={styles.blockTitle}>✅ {t("whoCanApply")}</Text>
+                      <Text style={styles.blockTitle}>{t("whoCanApply")}</Text>
                       {result.eligibility.map((f, i) => (
-                        <Text key={i} style={styles.item}>• {f}</Text>
+                        <View key={i} style={styles.item}>
+                          <View style={styles.dot} />
+                          <Text style={styles.itemText}>{f}</Text>
+                        </View>
                       ))}
                     </View>
                   )}
                   {result.documents?.length > 0 && (
                     <View style={styles.block}>
-                      <Text style={styles.blockTitle}>📄 {t("documentsNeeded")}</Text>
+                      <Text style={styles.blockTitle}>{t("documentsNeeded")}</Text>
                       {result.documents.map((f, i) => (
-                        <Text key={i} style={styles.item}>☐ {f}</Text>
-                      ))}
-                    </View>
-                  )}
-                  {result.keyFacts?.length > 0 && (
-                    <View style={styles.block}>
-                      <Text style={styles.blockTitle}>{t("keyFacts")}</Text>
-                      {result.keyFacts.map((f, i) => (
-                        <Text key={i} style={styles.item}>• {f}</Text>
+                        <View key={i} style={styles.item}>
+                          <Feather name="square" size={15} color={COLORS.ink400} style={{ marginTop: 3 }} />
+                          <Text style={styles.itemText}>{f}</Text>
+                        </View>
                       ))}
                     </View>
                   )}
@@ -303,118 +314,104 @@ export default function SahayakLiveScreen() {
                     <View style={styles.block}>
                       <Text style={styles.blockTitle}>{t("nextSteps")}</Text>
                       {result.nextSteps.map((f, i) => (
-                        <Text key={i} style={styles.item}>{i + 1}. {f}</Text>
+                        <View key={i} style={styles.item}>
+                          <Text style={styles.num}>{i + 1}</Text>
+                          <Text style={styles.itemText}>{f}</Text>
+                        </View>
                       ))}
                     </View>
                   )}
+
                   {!!result.officialLink && (
-                    <TouchableOpacity style={styles.officialBtn} onPress={() => openLink(result.officialLink)}>
-                      <Text style={styles.officialText}>Open official website ↗</Text>
-                    </TouchableOpacity>
+                    <Tap style={styles.primary} onPress={() => openLink(result.officialLink)}>
+                      <Text style={styles.primaryText}>{t("openOfficial")}</Text>
+                      <Feather name="arrow-up-right" size={18} color={COLORS.white} />
+                    </Tap>
                   )}
-                  <TouchableOpacity
-                    style={styles.shareBtn}
+                  <Tap
+                    style={styles.secondary}
                     onPress={() =>
                       Share.share({
-                        message: `${request}\n\n${result.answer}${result.documents?.length ? `\n\nDocuments needed:\n${result.documents.map((x) => `• ${x}`).join("\n")}` : ""}${result.nextSteps?.length ? `\n\nNext steps:\n${result.nextSteps.map((x, i) => `${i + 1}. ${x}`).join("\n")}` : ""}${result.officialLink ? `\n\nOfficial link: ${result.officialLink}` : ""}\n\n— verified live with Nyaya Setu`,
+                        message: `${request}\n\n${result.answer}${result.documents?.length ? `\n\n${t("documentsNeeded")}:\n${result.documents.map((x) => `• ${x}`).join("\n")}` : ""}${result.officialLink ? `\n\n${result.officialLink}` : ""}\n\n— Nyaya Setu`,
                       }).catch(() => {})
                     }
                   >
-                    <Text style={styles.shareText}>📤 Share on WhatsApp</Text>
-                  </TouchableOpacity>
+                    <Feather name="share-2" size={16} color={COLORS.ink} />
+                    <Text style={styles.secondaryText}>{t("share")}</Text>
+                  </Tap>
                   <SourceChips sources={result.sources} />
-                  {result.demo && <Text style={styles.demo}>Demo mode — add your TinyFish key in .env for real live runs.</Text>}
                 </View>
               )}
 
-
               {busy && (
-                <TouchableOpacity style={styles.cancelBtn} onPress={cancel}>
-                  <Text style={styles.cancelText}>{t("stop")}</Text>
-                </TouchableOpacity>
+                <Tap style={styles.stop} onPress={cancel}>
+                  <View style={styles.stopSquare} />
+                  <Text style={styles.stopText}>{t("stop").replace(/^■\s*/, "")}</Text>
+                </Tap>
               )}
-
               {phase === "done" && (
-                <TouchableOpacity style={styles.newBtn} onPress={() => setPhase("idle")}>
-                  <Text style={styles.newText}>＋ {t("newTask")}</Text>
-                </TouchableOpacity>
+                <Tap style={styles.newBtn} onPress={() => setPhase("idle")}>
+                  <Feather name="plus" size={18} color={COLORS.white} />
+                  <Text style={styles.newText}>{t("newTask")}</Text>
+                </Tap>
               )}
-            </>
+            </View>
           )}
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      <StopSpeaking />
-      <ChatInput
-        onSend={start}
-        onMicPress={busy ? undefined : handleMicPress}
-        isRecording={isRecording}
-        placeholder={t("sahayakPlaceholder")}
-        sendLabel={t("go")}
-      />
+        <StopSpeaking />
+        <ChatInput onSend={start} onMicPress={busy ? undefined : handleMicPress} isRecording={isRecording} placeholder={t("sahayakPlaceholder")} sendLabel={t("go")} />
       </KeyboardAware>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.parchment },
-  hero: {
-    backgroundColor: COLORS.ink,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
-    borderBottomLeftRadius: RADIUS.lg,
-    borderBottomRightRadius: RADIUS.lg,
-  },
-  heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  badge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: COLORS.inkSoft, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { color: COLORS.white, fontWeight: "900", fontSize: 11, letterSpacing: 1 },
-  powered: { color: COLORS.gold, fontSize: 11, fontWeight: "700" },
-  heroTitle: { color: COLORS.white, fontSize: 26, fontWeight: "800", marginTop: SPACING.md },
-  heroSub: { color: "#D9CFE0", fontSize: 14, lineHeight: 20, marginTop: 6 },
-  sectionTitle: { fontSize: 12.5, fontWeight: "800", color: COLORS.ink, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: SPACING.sm },
-  suggestion: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    gap: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  suggestionIcon: { fontSize: 22 },
-  suggestionText: { flex: 1, fontSize: 14, color: COLORS.ink900 },
-  go: { fontSize: 22, color: COLORS.gold, fontWeight: "800" },
-  howItWorks: { fontSize: 12, color: COLORS.midGray, lineHeight: 18, marginTop: SPACING.md, textAlign: "center" },
-  taskCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md, borderLeftWidth: 4, borderLeftColor: COLORS.gold },
-  taskLabel: { fontSize: 11, fontWeight: "800", color: COLORS.goldDark, letterSpacing: 0.6, textTransform: "uppercase" },
-  taskText: { fontSize: 15, fontWeight: "700", color: COLORS.ink900, marginTop: 2 },
-  planText: { fontSize: 12.5, color: COLORS.darkGray, marginTop: 6 },
-  cancelBtn: { alignSelf: "center", marginTop: SPACING.md, paddingHorizontal: SPACING.xl, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.rose },
-  cancelText: { color: COLORS.rose, fontWeight: "700" },
-  resultCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.teal },
-  resultHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  resultBadge: { flex: 1, color: COLORS.teal, fontWeight: "800", fontSize: 12.5 },
-  speaker: { fontSize: 22 },
-  answer: { fontSize: 15, lineHeight: 23, color: COLORS.ink900, marginTop: SPACING.sm },
-  block: { marginTop: SPACING.md, backgroundColor: COLORS.parchment, borderRadius: RADIUS.sm, padding: SPACING.md },
-  blockTitle: { fontWeight: "800", color: COLORS.ink, fontSize: 12.5, marginBottom: 4 },
-  item: { fontSize: 13.5, color: COLORS.darkGray, lineHeight: 20 },
-  officialBtn: { marginTop: SPACING.md, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" },
-  shareBtn: { marginTop: SPACING.sm, borderRadius: RADIUS.pill, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: "#25D366", backgroundColor: "#EAFBF0" },
-  shareText: { color: "#128C4A", fontWeight: "800" },
-  officialText: { color: COLORS.white, fontWeight: "700" },
-  demo: { marginTop: SPACING.sm, fontSize: 11, color: COLORS.midGray },
-  newBtn: { alignSelf: "center", marginTop: SPACING.lg, backgroundColor: COLORS.gold, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.xl, paddingVertical: 10 },
-  newText: { color: COLORS.white, fontWeight: "800" },
-  cross: { marginTop: SPACING.sm, backgroundColor: "#E6F4EA", borderRadius: RADIUS.sm, padding: SPACING.sm + 2, borderLeftWidth: 3, borderLeftColor: "#1E7B3C" },
-  crossFix: { backgroundColor: "#FFF4DC", borderLeftColor: "#A86A00" },
-  crossTitle: { fontSize: 12.5, fontWeight: "800", color: "#1E7B3C" },
-  crossNote: { fontSize: 12.5, color: COLORS.ink600, marginTop: 2, lineHeight: 18 },
-  errorCard: { backgroundColor: "#FDECEC", borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
-  errorText: { color: "#B42318", fontSize: 13.5 },
-  retry: { color: "#B42318", fontWeight: "800", marginTop: 6 },
+  safe: { flex: 1, backgroundColor: COLORS.bg },
+  header: { paddingHorizontal: 20, paddingTop: SPACING.lg },
+  title: { fontFamily: FONT.extrabold, fontSize: 30, color: COLORS.ink, letterSpacing: -0.8 },
+  sub: { fontFamily: FONT.medium, fontSize: 15, lineHeight: 21, color: COLORS.ink400, marginTop: 4 },
+  pad: { paddingHorizontal: 20 },
+
+  bigMicWrap: { alignItems: "center", paddingVertical: 28 },
+  bigMic: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  bigMicText: { fontFamily: FONT.semibold, fontSize: 15, color: COLORS.ink, marginTop: 14 },
+
+  section: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginBottom: 10 },
+  list: { borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
+  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 14, paddingVertical: 14 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  rowIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.surface, alignItems: "center", justifyContent: "center" },
+  rowText: { flex: 1, fontFamily: FONT.semibold, fontSize: 14.5, lineHeight: 20, color: COLORS.ink },
+
+  request: { fontFamily: FONT.bold, fontSize: 21, lineHeight: 28, color: COLORS.ink, letterSpacing: -0.3, marginTop: SPACING.lg },
+  siteChip: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: COLORS.tealSoft, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 5, marginTop: 10 },
+  siteText: { fontFamily: FONT.semibold, fontSize: 12.5, color: COLORS.teal },
+
+  card: { marginTop: SPACING.lg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 18, backgroundColor: COLORS.bg },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  statusText: { flex: 1, fontFamily: FONT.semibold, fontSize: 13.5 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surface, alignItems: "center", justifyContent: "center" },
+  cross: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: COLORS.tealSoft, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6, marginTop: 12 },
+  crossText: { fontFamily: FONT.semibold, fontSize: 12.5 },
+  answer: { fontFamily: FONT.regular, fontSize: 16, lineHeight: 25, color: COLORS.ink, marginTop: 14 },
+  block: { marginTop: 18 },
+  blockTitle: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.ink, marginBottom: 8 },
+  item: { flexDirection: "row", gap: 10, marginBottom: 7 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.ink, marginTop: 9 },
+  num: { width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.surface, textAlign: "center", lineHeight: 22, fontFamily: FONT.bold, fontSize: 12, color: COLORS.ink, overflow: "hidden" },
+  itemText: { flex: 1, fontFamily: FONT.regular, fontSize: 15, lineHeight: 22, color: COLORS.ink600 },
+  primary: { marginTop: 20, height: 52, borderRadius: RADIUS.pill, backgroundColor: COLORS.ink, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  primaryText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.white },
+  secondary: { marginTop: 10, height: 48, borderRadius: RADIUS.pill, backgroundColor: COLORS.surface, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  secondaryText: { fontFamily: FONT.bold, fontSize: 14.5, color: COLORS.ink },
+
+  stop: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: SPACING.lg, paddingHorizontal: 22, height: 44, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border },
+  stopSquare: { width: 10, height: 10, borderRadius: 2, backgroundColor: COLORS.rose },
+  stopText: { fontFamily: FONT.semibold, fontSize: 14, color: COLORS.ink },
+  newBtn: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: SPACING.lg, paddingHorizontal: 24, height: 50, borderRadius: RADIUS.pill, backgroundColor: COLORS.ink },
+  newText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.white },
+  errorCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.md, padding: 14, marginTop: SPACING.lg },
+  errorText: { flex: 1, fontFamily: FONT.medium, fontSize: 13.5, lineHeight: 19, color: COLORS.ink },
+  retry: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.rose },
 });

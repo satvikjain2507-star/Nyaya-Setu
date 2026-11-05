@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
-import { COLORS, RADIUS } from "../constants/theme";
+import { COLORS, RADIUS, FONT } from "../constants/theme";
 import { onSpeakingChange, stopSpeaking, isSpeaking } from "../utils/speaker";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -37,5 +37,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   square: { width: 11, height: 11, borderRadius: 2, backgroundColor: "#E5484D" },
-  text: { color: COLORS.white, fontWeight: "800", fontSize: 13.5 },
+  text: { fontFamily: FONT.extrabold, color: COLORS.white, fontSize: 13.5 },
 });

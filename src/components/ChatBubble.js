@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
 import { cleanForDisplay } from "../utils/language";
 
 export default function ChatBubble({ role, text, loading, accentColor, actions }) {
@@ -12,21 +12,14 @@ export default function ChatBubble({ role, text, loading, accentColor, actions }
         style={[
           styles.bubble,
           isUser
-            ? { backgroundColor: COLORS.ink, borderBottomRightRadius: RADIUS.sm }
-            : {
-                backgroundColor: COLORS.white,
-                borderWidth: 1,
-                borderColor: COLORS.border,
-                borderLeftWidth: 4,
-                borderLeftColor: accentColor || COLORS.gold,
-                borderBottomLeftRadius: RADIUS.sm,
-              },
+            ? { backgroundColor: COLORS.ink, borderBottomRightRadius: 6 }
+            : { backgroundColor: COLORS.surface, borderBottomLeftRadius: 6 },
         ]}
       >
         {loading ? (
-          <ActivityIndicator color={isUser ? COLORS.white : COLORS.gold} />
+          <ActivityIndicator color={isUser ? COLORS.white : COLORS.ink} />
         ) : (
-          <Text style={[styles.text, { color: isUser ? COLORS.white : COLORS.darkGray }]}>
+          <Text style={[styles.text, { color: isUser ? COLORS.white : COLORS.ink }]}>
             {isUser ? text : cleanForDisplay(text)}
           </Text>
         )}
@@ -46,29 +39,12 @@ export default function ChatBubble({ role, text, loading, accentColor, actions }
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", marginVertical: SPACING.xs + 2, paddingHorizontal: SPACING.md },
+  row: { flexDirection: "row", marginVertical: 5, paddingHorizontal: 16 },
   rowUser: { justifyContent: "flex-end" },
   rowBot: { justifyContent: "flex-start" },
-  bubble: {
-    maxWidth: "82%",
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md - 2,
-    paddingHorizontal: SPACING.lg - 2,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  text: { fontSize: 14.5, lineHeight: 21 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: SPACING.md + 4, marginTop: 2, marginBottom: 4 },
-  actionBtn: {
-    backgroundColor: COLORS.tealSoft,
-    borderColor: COLORS.teal,
-    borderWidth: 1,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  actionText: { color: COLORS.teal, fontWeight: "700", fontSize: 12.5 },
+  bubble: { maxWidth: "84%", borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
+  text: { fontFamily: FONT.regular, fontSize: 15.5, lineHeight: 23 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, marginTop: 4, marginBottom: 6 },
+  actionBtn: { backgroundColor: COLORS.bg, borderColor: COLORS.border, borderWidth: 1, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 },
+  actionText: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 13 },
 });

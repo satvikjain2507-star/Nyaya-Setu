@@ -1,10 +1,11 @@
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FlatList, StyleSheet, Image, View, Text, TouchableOpacity, Alert } from "react-native";
 import ChatBubble from "../components/ChatBubble";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
 import { geminiVisualSolve, geminiChat } from "../services/geminiApi";
 import { useLanguage } from "../context/LanguageContext";
 import { loadMessages, saveMessages } from "../utils/chatStorage";
@@ -97,7 +98,7 @@ export default function VisualSolverScreen() {
               <Image source={{ uri: pending.uri }} style={styles.preview} />
             ) : (
               <View style={[styles.preview, styles.pdf]}>
-                <Text style={{ fontSize: 26 }}>📄</Text>
+                <Feather name="file-text" size={26} color={COLORS.ink} />
               </View>
             )}
             <View style={{ flex: 1 }}>
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   pending: { flexDirection: "row", alignItems: "center", gap: SPACING.md, marginHorizontal: SPACING.md, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.parchment, borderWidth: 1, borderColor: COLORS.border },
   preview: { width: 56, height: 56, borderRadius: 10 },
   pdf: { backgroundColor: COLORS.goldSoft, alignItems: "center", justifyContent: "center" },
-  pendingTitle: { fontWeight: "700", color: COLORS.ink900, fontSize: 13.5 },
-  pendingSub: { color: COLORS.midGray, fontSize: 12, marginTop: 2 },
-  remove: { fontSize: 18, color: COLORS.rose, fontWeight: "800", paddingHorizontal: 8 },
+  pendingTitle: { fontFamily: FONT.bold, color: COLORS.ink900, fontSize: 13.5 },
+  pendingSub: { fontFamily: FONT.regular, color: COLORS.midGray, fontSize: 12, marginTop: 2 },
+  remove: { fontFamily: FONT.extrabold, fontSize: 18, color: COLORS.rose, paddingHorizontal: 8 },
 });

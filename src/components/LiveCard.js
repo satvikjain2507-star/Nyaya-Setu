@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Animated, Easing, Share } from "react-native";
-import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { Feather } from "@expo/vector-icons";
 
 export const LIVE_COLORS = {
-  confirmed: { bg: "#E6F4EA", fg: "#1E7B3C", icon: "✅" },
-  likely_genuine: { bg: "#E6F4EA", fg: "#1E7B3C", icon: "✅" },
-  updated: { bg: "#FFF4DC", fg: "#A86A00", icon: "🔄" },
-  suspicious: { bg: "#FFF4DC", fg: "#A86A00", icon: "⚠️" },
-  unclear: { bg: "#EEF0F4", fg: "#4A5568", icon: "❔" },
-  likely_scam: { bg: "#FDECEC", fg: "#B42318", icon: "🚨" },
+  confirmed: { bg: "#E8F5EE", fg: "#0B8A5B", icon: "✅", f: "check-circle" },
+  likely_genuine: { bg: "#E8F5EE", fg: "#0B8A5B", icon: "✅", f: "check-circle" },
+  updated: { bg: "#FDF5E6", fg: "#B7791F", icon: "🔄", f: "refresh-cw" },
+  suspicious: { bg: "#FDF5E6", fg: "#B7791F", icon: "⚠️", f: "alert-triangle" },
+  unclear: { bg: "#F4F4F2", fg: "#3A3A40", icon: "❔", f: "help-circle" },
+  likely_scam: { bg: "#FDEEEE", fg: "#D92D20", icon: "🚨", f: "alert-octagon" },
 };
 
 const VERDICT_LABEL = {
@@ -16,7 +17,7 @@ const VERDICT_LABEL = {
   updated: "Updated with latest official info",
   unclear: "Partially verified",
   likely_genuine: "Looks genuine",
-  suspicious: "Suspicious — be careful",
+  suspicious: "Suspicious, be careful",
   likely_scam: "Likely a SCAM",
 };
 
@@ -52,7 +53,7 @@ export function LiveWorking({ lines, accent = COLORS.teal }) {
     <View style={[styles.card, { borderLeftColor: accent }]}>
       <View style={styles.liveRow}>
         <LiveDot />
-        <Text style={styles.liveLabel}>LIVE · TinyFish</Text>
+        <Text style={styles.liveLabel}>CHECKING</Text>
       </View>
       <Text style={styles.working}>{lines[i]}</Text>
     </View>
@@ -66,7 +67,6 @@ export function SourceChips({ sources }) {
       {sources.map((s, idx) => (
         <TouchableOpacity key={idx} style={[styles.chip, s.official && styles.chipOfficial]} onPress={() => openLink(s.url)}>
           <Text style={[styles.chipText, s.official && styles.chipTextOfficial]} numberOfLines={1}>
-            {s.official ? "🏛️ " : "🔗 "}
             {s.site}
           </Text>
         </TouchableOpacity>
@@ -83,11 +83,10 @@ export default function LiveCard({ data }) {
   const time = data.checkedAt ? new Date(data.checkedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
 
   return (
-    <View style={[styles.card, { borderLeftColor: c.fg }]}>
+    <View style={styles.card}>
       <View style={[styles.badge, { backgroundColor: c.bg }]}>
-        <Text style={[styles.badgeText, { color: c.fg }]}>
-          {c.icon} {VERDICT_LABEL[data.verdict] || "Checked live"}
-        </Text>
+        <Feather name={c.f} size={14} color={c.fg} />
+        <Text style={[styles.badgeText, { color: c.fg }]}>{VERDICT_LABEL[data.verdict] || "Checked live"}</Text>
       </View>
 
       {!!data.headline && <Text style={styles.headline}>{data.headline}</Text>}
@@ -116,17 +115,20 @@ export default function LiveCard({ data }) {
 
       {!!data.officialLink && (
         <TouchableOpacity style={styles.officialBtn} onPress={() => openLink(data.officialLink)}>
-          <Text style={styles.officialBtnText}>Open official website ↗</Text>
+          <Text style={styles.officialBtnText}>Open official website</Text>
+          <Feather name="arrow-up-right" size={17} color="#fff" />
         </TouchableOpacity>
       )}
 
       {data.kind === "scam" && data.verdict !== "likely_genuine" && (
         <View style={styles.actRow}>
           <TouchableOpacity style={[styles.act, styles.actDanger]} onPress={() => Linking.openURL("tel:1930").catch(() => {})}>
-            <Text style={[styles.actText, { color: "#fff" }]}>📞 Call 1930</Text>
+            <Feather name="phone" size={14} color="#fff" />
+            <Text style={[styles.actText, { color: "#fff" }]}>Call 1930</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.act} onPress={() => openLink("https://cybercrime.gov.in")}>
-            <Text style={styles.actText}>🌐 Report online</Text>
+            <Feather name="globe" size={14} color={COLORS.ink} />
+            <Text style={styles.actText}>Report online</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -142,14 +144,15 @@ export default function LiveCard({ data }) {
             }).catch(() => {})
           }
         >
-          <Text style={styles.actText}>{data.kind === "scam" ? "📤 Warn family & friends" : "📤 Share"}</Text>
+          <Feather name="share-2" size={14} color={COLORS.ink} />
+          <Text style={styles.actText}>{data.kind === "scam" ? "Warn family" : "Share"}</Text>
         </TouchableOpacity>
       </View>
 
       <SourceChips sources={data.sources} />
 
       <Text style={styles.footer}>
-        {data.offline ? "Instant safety scan (offline)" : "Checked live via TinyFish"}{time ? ` · ${time}` : ""}
+        {data.offline ? "Instant safety scan" : "Checked just now"}{time ? ` · ${time}` : ""}
         {data.demo ? " · DEMO MODE" : ""}
       </Text>
     </View>
@@ -157,41 +160,27 @@ export default function LiveCard({ data }) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: SPACING.md,
-    marginVertical: SPACING.xs + 2,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderLeftWidth: 4,
-    padding: SPACING.md + 2,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
+  card: { marginHorizontal: 16, marginVertical: 6, backgroundColor: COLORS.bg, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 18 },
   liveRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveLabel: { fontSize: 11, fontWeight: "800", color: "#E5484D", letterSpacing: 0.8 },
-  working: { marginTop: 6, fontSize: 14, color: COLORS.darkGray },
-  badge: { alignSelf: "flex-start", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 12, fontWeight: "800" },
-  headline: { fontSize: 15.5, fontWeight: "700", color: COLORS.ink900, marginTop: SPACING.sm },
-  body: { fontSize: 14, color: COLORS.darkGray, lineHeight: 20, marginTop: 4 },
-  fact: { fontSize: 13.5, color: COLORS.darkGray, lineHeight: 20 },
-  todo: { marginTop: SPACING.sm, backgroundColor: COLORS.parchment, borderRadius: RADIUS.sm, padding: SPACING.sm + 2 },
-  todoTitle: { fontWeight: "800", color: COLORS.ink, fontSize: 12.5, marginBottom: 2 },
-  officialBtn: { marginTop: SPACING.md, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingVertical: 10, alignItems: "center" },
-  officialBtnText: { color: COLORS.white, fontWeight: "700", fontSize: 13.5 },
-  actRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: SPACING.sm + 2 },
-  act: { backgroundColor: COLORS.parchment, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: COLORS.border },
-  actDanger: { backgroundColor: "#B42318", borderColor: "#B42318" },
-  actText: { fontSize: 12.5, fontWeight: "800", color: COLORS.ink },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: SPACING.sm + 2 },
-  chip: { backgroundColor: COLORS.parchment, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: COLORS.border, maxWidth: 200 },
-  chipOfficial: { backgroundColor: COLORS.tealSoft, borderColor: COLORS.teal },
-  chipText: { fontSize: 11.5, color: COLORS.darkGray },
-  chipTextOfficial: { color: COLORS.teal, fontWeight: "700" },
-  footer: { marginTop: SPACING.sm + 2, fontSize: 10.5, color: COLORS.midGray },
+  liveLabel: { fontFamily: FONT.extrabold, fontSize: 11, color: COLORS.ink400, letterSpacing: 1 },
+  working: { fontFamily: FONT.regular, marginTop: 6, fontSize: 14.5, color: COLORS.ink },
+  badge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 6 },
+  badgeText: { fontFamily: FONT.bold, fontSize: 13, },
+  headline: { fontFamily: FONT.extrabold, fontSize: 18, lineHeight: 25, color: COLORS.ink, marginTop: 12 },
+  body: { fontFamily: FONT.regular, fontSize: 15, color: COLORS.ink600, lineHeight: 22, marginTop: 6 },
+  fact: { fontFamily: FONT.regular, fontSize: 14.5, color: COLORS.ink600, lineHeight: 22 },
+  todo: { marginTop: 14, backgroundColor: COLORS.surface, borderRadius: 14, padding: 14 },
+  todoTitle: { fontFamily: FONT.extrabold, color: COLORS.ink, fontSize: 14.5, marginBottom: 4 },
+  officialBtn: { marginTop: 16, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, height: 50, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
+  officialBtnText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 15 },
+  actRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  act: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 10 },
+  actDanger: { backgroundColor: COLORS.rose },
+  actText: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.ink },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  chip: { backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6, maxWidth: 200 },
+  chipOfficial: { backgroundColor: COLORS.tealSoft },
+  chipText: { fontFamily: FONT.regular, fontSize: 12, color: COLORS.ink600 },
+  chipTextOfficial: { fontFamily: FONT.bold, color: COLORS.teal, },
+  footer: { fontFamily: FONT.regular, marginTop: 12, fontSize: 12, color: COLORS.ink400 },
 });
