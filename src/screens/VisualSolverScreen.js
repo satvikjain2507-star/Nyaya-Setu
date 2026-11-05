@@ -5,7 +5,7 @@ import { FlatList, StyleSheet, Image, View, Text, TouchableOpacity, Alert } from
 import ChatBubble from "../components/ChatBubble";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { geminiVisualSolve, geminiChat } from "../services/geminiApi";
 import { useLanguage } from "../context/LanguageContext";
 import { loadMessages, saveMessages } from "../utils/chatStorage";
@@ -118,7 +118,7 @@ export default function VisualSolverScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
   pending: { flexDirection: "row", alignItems: "center", gap: SPACING.md, marginHorizontal: SPACING.md, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.parchment, borderWidth: 1, borderColor: COLORS.border },
   preview: { width: 56, height: 56, borderRadius: 10 },
@@ -126,4 +126,4 @@ const styles = StyleSheet.create({
   pendingTitle: { fontFamily: FONT.bold, color: COLORS.ink900, fontSize: 13.5 },
   pendingSub: { fontFamily: FONT.regular, color: COLORS.midGray, fontSize: 12, marginTop: 2 },
   remove: { fontFamily: FONT.extrabold, fontSize: 18, color: COLORS.rose, paddingHorizontal: 8 },
-});
+}));

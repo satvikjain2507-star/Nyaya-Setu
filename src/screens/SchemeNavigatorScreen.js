@@ -7,7 +7,7 @@ import ChatItem, { runLiveCheckForMessage } from "../components/ChatItem";
 import { verifyLive } from "../services/liveIntel";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
-import { COLORS } from "../constants/theme";
+import { COLORS, themed } from "../constants/theme";
 import { geminiChat, geminiChatWithAudio } from "../services/geminiApi";
 import { SCHEME_SYSTEM_PROMPT_BASE } from "../data/schemes";
 import { languageRule } from "../utils/language";
@@ -146,6 +146,6 @@ export default function SchemeNavigatorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
-});
+}));

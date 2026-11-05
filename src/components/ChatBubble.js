@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { cleanForDisplay } from "../utils/language";
 
 export default function ChatBubble({ role, text, loading, accentColor, actions }) {
@@ -38,7 +38,7 @@ export default function ChatBubble({ role, text, loading, accentColor, actions }
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: "row", marginVertical: 5, paddingHorizontal: 16 },
   rowUser: { justifyContent: "flex-end" },
   rowBot: { justifyContent: "flex-start" },
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, marginTop: 4, marginBottom: 6 },
   actionBtn: { backgroundColor: COLORS.bg, borderColor: COLORS.border, borderWidth: 1, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 },
   actionText: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 13 },
-});
+}));

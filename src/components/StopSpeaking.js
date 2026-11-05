@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
-import { COLORS, RADIUS, FONT } from "../constants/theme";
+import { COLORS, RADIUS, FONT, themed } from "../constants/theme";
 import { onSpeakingChange, stopSpeaking, isSpeaking } from "../utils/speaker";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -20,7 +20,7 @@ export default function StopSpeaking() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { alignItems: "center", paddingVertical: 6, backgroundColor: "transparent" },
   btn: {
     flexDirection: "row",
@@ -38,4 +38,4 @@ const styles = StyleSheet.create({
   },
   square: { width: 11, height: 11, borderRadius: 2, backgroundColor: "#E5484D" },
   text: { fontFamily: FONT.extrabold, color: COLORS.white, fontSize: 13.5 },
-});
+}));

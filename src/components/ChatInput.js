@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, TextInput, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { COLORS, FONT, RADIUS } from "../constants/theme";
+import { COLORS, FONT, RADIUS, themed } from "../constants/theme";
 import AttachSheet from "./AttachSheet";
 
 /**
@@ -41,28 +41,28 @@ export default function ChatInput({ onSend, onMicPress, onImagePress, onAttach, 
           value={value}
           onChangeText={setValue}
           placeholder={placeholder || "Type your message..."}
-          placeholderTextColor="#9A9AA1"
+          placeholderTextColor={COLORS.faint}
           multiline
         />
         {onMicPress && !value.trim() && (
           <Pressable style={[styles.iconBtn, isRecording && styles.recording]} onPress={onMicPress} accessibilityLabel="Speak" hitSlop={6}>
-            <Feather name={isRecording ? "square" : "mic"} size={20} color={isRecording ? COLORS.white : COLORS.ink600} />
+            <Feather name={isRecording ? "square" : "mic"} size={20} color={isRecording ? COLORS.onAccent : COLORS.ink600} />
           </Pressable>
         )}
       </View>
-      <Pressable style={[styles.sendBtn, !canSend && { backgroundColor: "#D4D4D8" }]} onPress={handleSend} accessibilityLabel="Send">
-        <Feather name="arrow-up" size={21} color={COLORS.white} />
+      <Pressable style={[styles.sendBtn, !canSend && { backgroundColor: COLORS.surfaceAlt }]} onPress={handleSend} accessibilityLabel="Send">
+        <Feather name="arrow-up" size={21} color={canSend ? COLORS.white : COLORS.faint} />
       </Pressable>
       {onAttach && <AttachSheet visible={sheet} onClose={() => setSheet(false)} onPick={onAttach} title={attachTitle} />}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
   field: { flex: 1, flexDirection: "row", alignItems: "flex-end", backgroundColor: COLORS.surface, borderRadius: 24, minHeight: 48, paddingHorizontal: 4 },
   input: { flex: 1, maxHeight: 120, fontFamily: FONT.medium, fontSize: 15.5, color: COLORS.ink, paddingHorizontal: 6, paddingTop: 13, paddingBottom: 13 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   recording: { backgroundColor: COLORS.rose },
   sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
-});
+}));

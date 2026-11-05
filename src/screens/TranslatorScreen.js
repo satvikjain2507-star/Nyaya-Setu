@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import React, { useState, useCallback, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Modal, Pressable, Share } from "react-native";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
 import { geminiTranslate, geminiTranslateVoice } from "../services/geminiApi";
 import { LANGUAGES } from "../data/translations";
@@ -184,7 +184,7 @@ export default function TranslatorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
   body: { flex: 1 },
   langBar: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: COLORS.parchment },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   langCaption: { fontFamily: FONT.bold, fontSize: 10.5, color: COLORS.midGray, textTransform: "uppercase" },
   langName: { fontFamily: FONT.bold, fontSize: 14.5, color: COLORS.ink900, marginTop: 1 },
   swapBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.gold, alignItems: "center", justifyContent: "center" },
-  swapText: { fontFamily: FONT.extrabold, color: COLORS.white, fontSize: 18, },
+  swapText: { fontFamily: FONT.extrabold, color: COLORS.onAccent, fontSize: 18, },
   empty: { alignItems: "center", paddingVertical: 12 },
   emptyIcon: { fontFamily: FONT.regular, fontSize: 30 },
   emptyText: { fontFamily: FONT.regular, color: COLORS.darkGray, fontSize: 13.5, textAlign: "center", marginTop: 8, lineHeight: 19, paddingHorizontal: 12 },
@@ -200,20 +200,20 @@ const styles = StyleSheet.create({
   chip: { borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: COLORS.parchment },
   chipOn: { backgroundColor: COLORS.gold, borderColor: COLORS.gold },
   chipText: { fontFamily: FONT.regular, fontSize: 13, color: COLORS.darkGray },
-  chipTextOn: { fontFamily: FONT.extrabold, color: COLORS.white, },
+  chipTextOn: { fontFamily: FONT.extrabold, color: COLORS.onAccent, },
   sourceBox: { backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 14, marginBottom: 12 },
   sourceLabel: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.midGray, textTransform: "uppercase", marginBottom: 4 },
   sourceText: { fontFamily: FONT.regular, fontSize: 14.5, color: COLORS.darkGray },
-  resultBox: { backgroundColor: "#FFF7F0", borderRadius: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.orange },
+  resultBox: { backgroundColor: COLORS.goldSoft, borderRadius: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: COLORS.orange },
   resultLabel: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.goldDark, textTransform: "uppercase", marginBottom: 4 },
   resultText: { fontFamily: FONT.regular, fontSize: 17, color: COLORS.black, lineHeight: 25 },
   playBtn: { backgroundColor: COLORS.orange, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   shareBtn: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  playBtnText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 12.5 },
+  playBtnText: { fontFamily: FONT.bold, color: COLORS.onAccent, fontSize: 12.5 },
   backdrop: { flex: 1, backgroundColor: "rgba(22,13,25,0.45)" },
   sheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.lg, paddingBottom: SPACING.xl + 8 },
   sheetTitle: { fontFamily: FONT.extrabold, fontSize: 16, color: COLORS.ink900, marginBottom: SPACING.sm },
   option: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   optionOn: { backgroundColor: COLORS.goldSoft, borderRadius: 8 },
   optionText: { fontFamily: FONT.regular, fontSize: 15, color: COLORS.ink900 },
-});
+}));

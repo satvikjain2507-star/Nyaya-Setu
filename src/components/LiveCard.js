@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Animated, Easing, Share } from "react-native";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { Feather } from "@expo/vector-icons";
 
-export const LIVE_COLORS = {
-  confirmed: { bg: "#E8F5EE", fg: "#0B8A5B", icon: "✅", f: "check-circle" },
-  likely_genuine: { bg: "#E8F5EE", fg: "#0B8A5B", icon: "✅", f: "check-circle" },
-  updated: { bg: "#FDF5E6", fg: "#B7791F", icon: "🔄", f: "refresh-cw" },
-  suspicious: { bg: "#FDF5E6", fg: "#B7791F", icon: "⚠️", f: "alert-triangle" },
-  unclear: { bg: "#F4F4F2", fg: "#3A3A40", icon: "❔", f: "help-circle" },
-  likely_scam: { bg: "#FDEEEE", fg: "#D92D20", icon: "🚨", f: "alert-octagon" },
-};
+export const LIVE_COLORS = themed(() => ({
+  confirmed: { bg: COLORS.tealSoft, fg: COLORS.teal, icon: "✅", f: "check-circle" },
+  likely_genuine: { bg: COLORS.tealSoft, fg: COLORS.teal, icon: "✅", f: "check-circle" },
+  updated: { bg: COLORS.amberSoft, fg: COLORS.amber, icon: "🔄", f: "refresh-cw" },
+  suspicious: { bg: COLORS.amberSoft, fg: COLORS.amber, icon: "⚠️", f: "alert-triangle" },
+  unclear: { bg: COLORS.surface, fg: COLORS.ink600, icon: "❔", f: "help-circle" },
+  likely_scam: { bg: COLORS.roseSoft, fg: COLORS.rose, icon: "🚨", f: "alert-octagon" },
+}));
 
 const VERDICT_LABEL = {
   confirmed: "Verified on official sites",
@@ -159,7 +159,7 @@ export default function LiveCard({ data }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   card: { marginHorizontal: 16, marginVertical: 6, backgroundColor: COLORS.bg, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 18 },
   liveRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   liveLabel: { fontFamily: FONT.extrabold, fontSize: 11, color: COLORS.ink400, letterSpacing: 1 },
@@ -183,4 +183,4 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: FONT.regular, fontSize: 12, color: COLORS.ink600 },
   chipTextOfficial: { fontFamily: FONT.bold, color: COLORS.teal, },
   footer: { fontFamily: FONT.regular, marginTop: 12, fontSize: 12, color: COLORS.ink400 },
-});
+}));

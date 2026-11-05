@@ -27,25 +27,30 @@ import SahayakLiveScreen from "./src/screens/SahayakLiveScreen";
 import ScamShieldScreen from "./src/screens/ScamShieldScreen";
 import { COLORS, FONT } from "./src/constants/theme";
 import { LanguageProvider, useLanguage } from "./src/context/LanguageContext";
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const NAV_THEME = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: COLORS.bg, card: COLORS.bg, border: COLORS.border, primary: COLORS.ink } };
+const navTheme = () => ({ ...DefaultTheme, dark: false, colors: { ...DefaultTheme.colors, background: COLORS.bg, card: COLORS.bg, border: COLORS.border, primary: COLORS.ink, text: COLORS.ink } });
 
-const HEADER_OPTIONS = {
+const headerOptions = () => ({
   headerStyle: { backgroundColor: COLORS.bg },
   headerTintColor: COLORS.ink,
-  headerTitleStyle: { fontFamily: FONT.bold, fontSize: 18 },
+  headerTitleStyle: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink },
   headerShadowVisible: false,
   headerBackButtonDisplayMode: "minimal",
-};
+  contentStyle: { backgroundColor: COLORS.bg },
+});
+
+// keep the current screen when the theme switches (the tree remounts)
+let savedNavState;
 
 // Home tab has its own stack so it can push into each tool
 function HomeStack() {
   const { t } = useLanguage();
   return (
-    <Stack.Navigator screenOptions={HEADER_OPTIONS}>
+    <Stack.Navigator screenOptions={headerOptions()}>
       <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SchemeNavigator" component={SchemeNavigatorScreen} options={{ title: t("schemeNavigator") }} />
       <Stack.Screen name="LegalCompanion" component={LegalCompanionScreen} options={{ title: t("legalCompanion") }} />
@@ -93,7 +98,7 @@ function Tabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: COLORS.ink,
-        tabBarInactiveTintColor: "#9A9AA1",
+        tabBarInactiveTintColor: COLORS.faint,
         tabBarStyle: {
           backgroundColor: COLORS.bg,
           borderTopColor: COLORS.border,
@@ -108,10 +113,10 @@ function Tabs() {
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: t("home") }} />
-      <Tab.Screen name="SchemeTab" component={SchemeNavigatorScreen} options={{ title: t("tabSchemes"), headerShown: true, ...HEADER_OPTIONS, headerTitle: t("schemeNavigator") }} />
+      <Tab.Screen name="SchemeTab" component={SchemeNavigatorScreen} options={{ title: t("tabSchemes"), headerShown: true, ...headerOptions(), headerTitle: t("schemeNavigator") }} />
       <Tab.Screen name="LiveTab" component={SahayakLiveScreen} options={{ title: t("tabLive") }} />
-      <Tab.Screen name="LegalTab" component={LegalCompanionScreen} options={{ title: t("tabLegal"), headerShown: true, ...HEADER_OPTIONS, headerTitle: t("legalCompanion") }} />
-      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ title: t("settings"), headerShown: true, ...HEADER_OPTIONS }} />
+      <Tab.Screen name="LegalTab" component={LegalCompanionScreen} options={{ title: t("tabLegal"), headerShown: true, ...headerOptions(), headerTitle: t("legalCompanion") }} />
+      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ title: t("settings"), headerShown: true, ...headerOptions() }} />
     </Tab.Navigator>
   );
 }
@@ -127,12 +132,23 @@ export default function App() {
   if (!fontsLoaded) return null;
   return (
     <SafeAreaProvider>
-      <LanguageProvider>
-        <NavigationContainer theme={NAV_THEME}>
-          <StatusBar style="dark" />
-          <Tabs />
-        </NavigationContainer>
-      </LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <Root />
+        </LanguageProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+function Root() {
+  const { isDark } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
+      <NavigationContainer theme={navTheme()} initialState={savedNavState} onStateChange={(s) => (savedNavState = s)}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <Tabs />
+      </NavigationContainer>
+    </View>
   );
 }

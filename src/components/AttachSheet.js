@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from "react-native";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { Feather } from "@expo/vector-icons";
 
 const OPTIONS = [
@@ -43,7 +43,7 @@ export default function AttachSheet({ visible, onClose, onPick, title = "Add a p
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   sheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.lg, paddingBottom: SPACING.xl + 8 },
   handle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: COLORS.border, marginBottom: SPACING.md },
@@ -55,4 +55,4 @@ const styles = StyleSheet.create({
   rowSub: { fontFamily: FONT.regular, fontSize: 12.5, color: COLORS.midGray, marginTop: 2 },
   cancel: { marginTop: SPACING.md, alignItems: "center", paddingVertical: SPACING.sm },
   cancelText: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 15 },
-});
+}));

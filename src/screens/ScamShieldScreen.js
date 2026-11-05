@@ -16,7 +16,7 @@ import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
 import StopSpeaking from "../components/StopSpeaking";
 import { openLink } from "../components/LiveCard";
-import { COLORS, RADIUS, SPACING, FONT } from "../constants/theme";
+import { COLORS, RADIUS, SPACING, FONT, themed } from "../constants/theme";
 import { scamCheck } from "../services/liveIntel";
 import { geminiChatWithImage, geminiTranscribe, isAiBusy } from "../services/geminiApi";
 import { useVoiceRecorder } from "../utils/voiceRecorder";
@@ -174,7 +174,7 @@ export default function ScamShieldScreen() {
         <Text style={styles.heroSub}>{t("scamHeroSub")}</Text>
         <View style={styles.heroBtns}>
           <TouchableOpacity style={styles.heroBtn} onPress={() => Linking.openURL("tel:1930")}>
-            <Feather name="phone" size={15} color={COLORS.white} />
+            <Feather name="phone" size={15} color={COLORS.onAccent} />
             <Text style={styles.heroBtnText}>Call 1930</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.heroBtn, styles.heroBtnGhost]} onPress={() => openLink("https://cybercrime.gov.in")}>
@@ -195,7 +195,7 @@ export default function ScamShieldScreen() {
                     {s.text}
                   </Text>
                 </View>
-                <Feather name="arrow-up-right" size={18} color="#A1A1AA" />
+                <Feather name="arrow-up-right" size={18} color={COLORS.faint} />
               </TouchableOpacity>
             ))}
           </View>
@@ -240,7 +240,7 @@ export default function ScamShieldScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   hero: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
   heroTitle: { fontFamily: FONT.extrabold, color: COLORS.ink, fontSize: 28, letterSpacing: -0.6 },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   heroBtns: { flexDirection: "row", gap: 8, marginTop: 16 },
   heroBtn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: COLORS.rose, borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 42 },
   heroBtnGhost: { backgroundColor: COLORS.surface },
-  heroBtnText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 14 },
+  heroBtnText: { fontFamily: FONT.bold, color: COLORS.onAccent, fontSize: 14 },
   sectionTitle: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginBottom: 10 },
   list: { borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
   sample: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
@@ -262,4 +262,4 @@ const styles = StyleSheet.create({
   flagItem: { fontFamily: FONT.regular, fontSize: 14, color: COLORS.ink600, lineHeight: 21, marginTop: 2 },
   clear: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingHorizontal: 22, height: 48 },
   clearText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 14.5 },
-});
+}));

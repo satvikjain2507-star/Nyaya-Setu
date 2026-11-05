@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, Pressable, Modal, useWindowDimensions } from "react-native";
 import { WebView } from "react-native-webview";
-import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, FONT, RADIUS, SPACING, themed } from "../constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useLanguage } from "../context/LanguageContext";
 import { LiveDot } from "./LiveCard";
@@ -86,7 +86,7 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
     return (
       <View style={styles.doneRow}>
         <View style={styles.doneIcon}>
-          <Feather name="check" size={14} color={COLORS.white} />
+          <Feather name="check" size={14} color={COLORS.onAccent} />
         </View>
         <Text style={styles.doneText} numberOfLines={1}>
           {t("stepDone")}
@@ -175,13 +175,13 @@ export default function AgentLiveView({ streamingUrl, steps = [], status, elapse
   );
 }
 
-const styles = StyleSheet.create({
-  frame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.ink, borderWidth: 1, borderColor: COLORS.border },
+const styles = themed(() => StyleSheet.create({
+  frame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.hero, borderWidth: 1, borderColor: COLORS.border },
   frameBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, backgroundColor: COLORS.surface, gap: 8 },
   urlText: { flex: 1, fontFamily: FONT.semibold, color: COLORS.ink600, fontSize: 12.5 },
   liveBadge: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#E5484D", borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 },
   liveBadgeText: { fontFamily: FONT.bold, color: "#fff", fontSize: 10, letterSpacing: 1 },
-  screen: { backgroundColor: COLORS.ink },
+  screen: { backgroundColor: COLORS.hero },
   expandBtn: { position: "absolute", right: 10, bottom: 10, width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   placeholderText: { fontFamily: FONT.medium, color: "#BDBDC4", fontSize: 13.5 },
@@ -196,5 +196,5 @@ const styles = StyleSheet.create({
   doneText: { flex: 1, fontFamily: FONT.semibold, color: COLORS.ink, fontSize: 14 },
   doneMeta: { fontFamily: FONT.medium, color: COLORS.ink400, fontSize: 12.5 },
   modalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", paddingHorizontal: 10 },
-  modalFrame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.ink },
-});
+  modalFrame: { borderRadius: RADIUS.lg, overflow: "hidden", backgroundColor: COLORS.hero },
+}));

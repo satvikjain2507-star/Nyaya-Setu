@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing } from "react-native";
-import { COLORS, FONT } from "../constants/theme";
+import { COLORS, FONT, themed } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
 
 /** Order-tracker style progress: Understand → Find page → Browse → Verify. */
@@ -49,10 +49,10 @@ export default function PipelineStrip({ stages = {} }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { marginTop: 18 },
   label: { fontFamily: FONT.semibold, fontSize: 14, color: COLORS.ink },
   bars: { flexDirection: "row", gap: 6, marginTop: 10 },
   track: { flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.surfaceAlt, overflow: "hidden" },
   fill: { ...StyleSheet.absoluteFillObject, borderRadius: 2 },
-});
+}));

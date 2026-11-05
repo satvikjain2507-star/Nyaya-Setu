@@ -16,6 +16,10 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
+    settingsTheme: "Appearance",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
     homeHello: "Namaste 🙏",
     homeTitle: "How can we help today?",
     askPlaceholder: "Ask or speak your problem",
@@ -152,6 +156,10 @@ export const STRINGS = {
     findingRealCentres: "Finding real help centres in",
   },
   hi: {
+    settingsTheme: "दिखावट",
+    themeSystem: "सिस्टम",
+    themeLight: "लाइट",
+    themeDark: "डार्क",
     homeHello: "नमस्ते 🙏",
     homeTitle: "आज हम आपकी क्या मदद करें?",
     askPlaceholder: "अपनी समस्या बोलें या लिखें",

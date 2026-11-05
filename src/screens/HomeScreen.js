@@ -2,7 +2,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, FONT, RADIUS, SPACING, themed } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
 import { LiveDot, openLink } from "../components/LiveCard";
 import { getLiveUpdates } from "../services/liveIntel";
@@ -17,11 +17,11 @@ const QUICK = [
 ];
 
 const SERVICES = [
-  { key: "SchemeNavigator", label: "schemeNavigator", icon: "layers", tint: COLORS.gold, bg: COLORS.goldSoft },
-  { key: "LegalCompanion", label: "legalCompanion", mci: "scale-balance", tint: COLORS.violet, bg: COLORS.violetSoft },
-  { key: "DocumentSimplifier", label: "documentSimplifier", icon: "file-text", tint: COLORS.blue, bg: COLORS.blueSoft },
-  { key: "Translator", label: "translator", mci: "translate", tint: COLORS.teal, bg: COLORS.tealSoft },
-  { key: "VisualSolver", label: "visualSolver", icon: "camera", tint: COLORS.amber, bg: COLORS.amberSoft },
+  { key: "SchemeNavigator", label: "schemeNavigator", icon: "layers", tint: "gold", bg: "goldSoft" },
+  { key: "LegalCompanion", label: "legalCompanion", mci: "scale-balance", tint: "violet", bg: "violetSoft" },
+  { key: "DocumentSimplifier", label: "documentSimplifier", icon: "file-text", tint: "blue", bg: "blueSoft" },
+  { key: "Translator", label: "translator", mci: "translate", tint: "teal", bg: "tealSoft" },
+  { key: "VisualSolver", label: "visualSolver", icon: "camera", tint: "amber", bg: "amberSoft" },
 ];
 
 const HELPLINES = [
@@ -109,7 +109,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.heroBottom}>
               <Text style={styles.heroSub}>{t("liveCardSub")}</Text>
               <View style={styles.heroArrow}>
-                <Feather name="arrow-up-right" size={22} color={COLORS.ink} />
+                <Feather name="arrow-up-right" size={22} color="#0B0B0C" />
               </View>
             </View>
           </Tap>
@@ -137,11 +137,11 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.list}>
             {SERVICES.map((s, i) => (
               <Tap key={s.key} style={[styles.row, i > 0 && styles.rowBorder]} onPress={() => navigation.navigate(s.key)}>
-                <View style={[styles.rowIcon, { backgroundColor: s.bg }]}>
-                  {s.mci ? <MaterialCommunityIcons name={s.mci} size={19} color={s.tint} /> : <Feather name={s.icon} size={18} color={s.tint} />}
+                <View style={[styles.rowIcon, { backgroundColor: COLORS[s.bg] }]}>
+                  {s.mci ? <MaterialCommunityIcons name={s.mci} size={19} color={COLORS[s.tint]} /> : <Feather name={s.icon} size={18} color={COLORS[s.tint]} />}
                 </View>
                 <Text style={styles.rowText}>{t(s.label)}</Text>
-                <Feather name="chevron-right" size={20} color="#A1A1AA" />
+                <Feather name="chevron-right" size={20} color={COLORS.faint} />
               </Tap>
             ))}
           </View>
@@ -182,7 +182,7 @@ export default function HomeScreen({ navigation }) {
                   {u.date ? `  ·  ${u.date}` : ""}
                 </Text>
               </View>
-              <Feather name="arrow-up-right" size={18} color="#A1A1AA" />
+              <Feather name="arrow-up-right" size={18} color={COLORS.faint} />
             </Tap>
           ))}
         </View>
@@ -191,7 +191,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: SPACING.md },
   brand: { fontFamily: FONT.extrabold, fontSize: 20, color: COLORS.ink, letterSpacing: -0.4 },
@@ -225,14 +225,14 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: FONT.semibold, fontSize: 13.5, color: COLORS.ink },
   body: { paddingHorizontal: 20 },
 
-  hero: { marginTop: 20, backgroundColor: COLORS.ink, borderRadius: RADIUS.lg, padding: 20, minHeight: 170, justifyContent: "space-between" },
+  hero: { marginTop: 20, backgroundColor: COLORS.hero, borderRadius: RADIUS.lg, padding: 20, minHeight: 170, justifyContent: "space-between" },
   heroTop: { flexDirection: "row" },
   livePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 5 },
-  livePillText: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.white, letterSpacing: 1.2 },
-  heroTitle: { fontFamily: FONT.extrabold, fontSize: 28, color: COLORS.white, letterSpacing: -0.6, marginTop: 18 },
+  livePillText: { fontFamily: FONT.bold, fontSize: 11, color: COLORS.onHero, letterSpacing: 1.2 },
+  heroTitle: { fontFamily: FONT.extrabold, fontSize: 28, color: COLORS.onHero, letterSpacing: -0.6, marginTop: 18 },
   heroBottom: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginTop: 6 },
   heroSub: { flex: 1, fontFamily: FONT.medium, fontSize: 14.5, lineHeight: 20, color: "#BDBDC4" },
-  heroArrow: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.white, alignItems: "center", justifyContent: "center" },
+  heroArrow: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
 
   tiles: { flexDirection: "row", gap: 12, marginTop: 12 },
   tile: { flex: 1, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, minHeight: 150 },
@@ -259,4 +259,4 @@ const styles = StyleSheet.create({
   newsTag: { fontFamily: FONT.bold, fontSize: 10.5, letterSpacing: 1 },
   newsTitle: { fontFamily: FONT.semibold, fontSize: 15, lineHeight: 21, color: COLORS.ink, marginTop: 3 },
   newsMeta: { fontFamily: FONT.medium, fontSize: 12.5, color: COLORS.ink400, marginTop: 4 },
-});
+}));

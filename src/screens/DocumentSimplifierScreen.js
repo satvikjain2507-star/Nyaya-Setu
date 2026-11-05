@@ -6,7 +6,7 @@ import ChatItem, { runLiveCheckForMessage } from "../components/ChatItem";
 import { scamCheck } from "../services/liveIntel";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
-import { COLORS } from "../constants/theme";
+import { COLORS, themed } from "../constants/theme";
 import { geminiChatWithImage, geminiChat } from "../services/geminiApi";
 import { DOCUMENT_SYSTEM_PROMPT_BASE } from "../data/documentPrompts";
 import { languageRule } from "../utils/language";
@@ -130,6 +130,6 @@ export default function DocumentSimplifierScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.white },
-});
+}));

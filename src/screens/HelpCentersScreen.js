@@ -3,21 +3,23 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Pressable, Linking, ScrollView } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, FONT, RADIUS, SPACING, themed } from "../constants/theme";
 import { HELP_CENTERS } from "../data/helpCenters";
 import { distanceKm } from "../utils/distance";
 import { useLanguage } from "../context/LanguageContext";
 import { findHelpCentersLive } from "../services/liveIntel";
 import { openLink } from "../components/LiveCard";
 
-const KIND = (type = "") =>
+const KIND = (type = "") => resolve(kindOf(type));
+const resolve = (k) => ({ ...k, color: COLORS[k.color], soft: COLORS[k.soft] });
+const kindOf = (type) =>
   /police/i.test(type)
-    ? { key: "police", icon: "police-badge-outline", color: COLORS.blue, soft: COLORS.blueSoft }
+    ? { key: "police", icon: "police-badge-outline", color: "blue", soft: "blueSoft" }
     : /legal|dlsa/i.test(type)
-    ? { key: "legal", icon: "scale-balance", color: COLORS.violet, soft: COLORS.violetSoft }
+    ? { key: "legal", icon: "scale-balance", color: "violet", soft: "violetSoft" }
     : /women|one stop|sakhi/i.test(type)
-    ? { key: "women", icon: "human-female", color: COLORS.rose, soft: COLORS.roseSoft }
-    : { key: "csc", icon: "office-building-outline", color: COLORS.teal, soft: COLORS.tealSoft };
+    ? { key: "women", icon: "human-female", color: "rose", soft: "roseSoft" }
+    : { key: "csc", icon: "office-building-outline", color: "teal", soft: "tealSoft" };
 
 const FILTERS = [
   { key: "all", label: "hcAll" },
@@ -28,10 +30,10 @@ const FILTERS = [
 ];
 
 const MAP_SEARCHES = [
-  { q: "Common Service Centre CSC", label: "CSC", icon: "office-building-outline", color: COLORS.teal, soft: COLORS.tealSoft },
-  { q: "police station", label: "Police", icon: "police-badge-outline", color: COLORS.blue, soft: COLORS.blueSoft },
-  { q: "District Legal Services Authority", label: "hlLegal", icon: "scale-balance", color: COLORS.violet, soft: COLORS.violetSoft },
-  { q: "One Stop Centre Sakhi", label: "hlWomen", icon: "human-female", color: COLORS.rose, soft: COLORS.roseSoft },
+  { q: "Common Service Centre CSC", label: "CSC", icon: "office-building-outline", color: "teal", soft: "tealSoft" },
+  { q: "police station", label: "Police", icon: "police-badge-outline", color: "blue", soft: "blueSoft" },
+  { q: "District Legal Services Authority", label: "hlLegal", icon: "scale-balance", color: "violet", soft: "violetSoft" },
+  { q: "One Stop Centre Sakhi", label: "hlWomen", icon: "human-female", color: "rose", soft: "roseSoft" },
 ];
 
 const HELPLINES = [
@@ -139,13 +141,13 @@ export default function HelpCentersScreen() {
       <View style={styles.mapGrid}>
         {MAP_SEARCHES.map((m) => (
           <Tap key={m.q} style={styles.mapBtn} onPress={() => openLink(mapsSearch(m.q))}>
-            <View style={[styles.mapIcon, { backgroundColor: m.soft }]}>
-              <MaterialCommunityIcons name={m.icon} size={20} color={m.color} />
+            <View style={[styles.mapIcon, { backgroundColor: COLORS[m.soft] }]}>
+              <MaterialCommunityIcons name={m.icon} size={20} color={COLORS[m.color]} />
             </View>
             <Text style={styles.mapText} numberOfLines={1}>
               {tt(m.label)}
             </Text>
-            <Feather name="map" size={15} color="#A1A1AA" />
+            <Feather name="map" size={15} color={COLORS.faint} />
           </Tap>
         ))}
       </View>
@@ -230,7 +232,7 @@ export default function HelpCentersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   loc: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.surface, borderRadius: 20, padding: 14, marginTop: 8 },
   locIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
@@ -261,4 +263,4 @@ const styles = StyleSheet.create({
   btn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 40 },
   btnPrimary: { backgroundColor: COLORS.ink },
   btnText: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.ink },
-});
+}));

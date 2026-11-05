@@ -15,7 +15,7 @@ import ChatInput from "../components/ChatInput";
 import AgentLiveView from "../components/AgentLiveView";
 import PipelineStrip from "../components/PipelineStrip";
 import { SourceChips, openLink } from "../components/LiveCard";
-import { COLORS, FONT, RADIUS, SPACING } from "../constants/theme";
+import { COLORS, FONT, RADIUS, SPACING, themed } from "../constants/theme";
 import { speak, stopSpeaking } from "../utils/speaker";
 import StopSpeaking from "../components/StopSpeaking";
 import { useLanguage } from "../context/LanguageContext";
@@ -235,7 +235,7 @@ export default function SahayakLiveScreen({ route }) {
                       <MaterialCommunityIcons name={s.icon} size={19} color={COLORS.ink} />
                     </View>
                     <Text style={styles.rowText}>{s.text}</Text>
-                    <Feather name="arrow-up-right" size={18} color="#A1A1AA" />
+                    <Feather name="arrow-up-right" size={18} color={COLORS.faint} />
                   </Tap>
                 ))}
               </View>
@@ -366,7 +366,7 @@ export default function SahayakLiveScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   header: { paddingHorizontal: 20, paddingTop: SPACING.lg },
   title: { fontFamily: FONT.extrabold, fontSize: 30, color: COLORS.ink, letterSpacing: -0.8 },
@@ -414,4 +414,4 @@ const styles = StyleSheet.create({
   errorCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.md, padding: 14, marginTop: SPACING.lg },
   errorText: { flex: 1, fontFamily: FONT.medium, fontSize: 13.5, lineHeight: 19, color: COLORS.ink },
   retry: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.rose },
-});
+}));

@@ -3,8 +3,9 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { COLORS, FONT, RADIUS } from "../constants/theme";
+import { COLORS, FONT, RADIUS, themed } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme } from "../context/ThemeContext";
 import { LANGUAGES } from "../data/translations";
 import { clearMessages } from "../utils/chatStorage";
 
@@ -18,6 +19,7 @@ const SPEEDS = [
 
 export default function SettingsScreen() {
   const { langCode, changeLanguage, t, speechRate, setSpeechRate } = useLanguage();
+  const { mode, setMode } = useTheme();
 
   const handleClearHistory = () => {
     Alert.alert(t("clearHistory"), "This removes all saved conversations.", [
@@ -37,6 +39,23 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 0, paddingBottom: 40 }}>
+        <Text style={styles.section}>{t("settingsTheme")}</Text>
+        <View style={styles.segment}>
+          {[
+            { key: "system", icon: "smartphone", label: "themeSystem" },
+            { key: "light", icon: "sun", label: "themeLight" },
+            { key: "dark", icon: "moon", label: "themeDark" },
+          ].map((m) => {
+            const on = mode === m.key;
+            return (
+              <Pressable key={m.key} style={[styles.seg, styles.segRow, on && styles.segOn]} onPress={() => setMode(m.key)}>
+                <Feather name={m.icon} size={15} color={on ? COLORS.white : COLORS.ink} />
+                <Text style={[styles.segText, on && { color: COLORS.white }]}>{t(m.label)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <Text style={styles.section}>{t("settingsLanguage")}</Text>
         <View style={styles.group}>
           {LANGUAGES.map((l, i) => {
@@ -82,14 +101,14 @@ export default function SettingsScreen() {
             Nyaya Setu<Text style={{ color: COLORS.gold }}>.</Text>
           </Text>
           <Text style={styles.aboutText}>न्याय सेतु · Bridge to Justice. Free for every citizen. General guidance only, not legal advice.</Text>
-          <Text style={styles.version}>Version 1.3</Text>
+          <Text style={styles.version}>Version 1.3.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   section: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginTop: 26, marginBottom: 10 },
   group: { borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
@@ -101,8 +120,9 @@ const styles = StyleSheet.create({
   segment: { flexDirection: "row", backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, padding: 4 },
   seg: { flex: 1, height: 40, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
   segOn: { backgroundColor: COLORS.ink },
+  segRow: { flexDirection: "row", gap: 7 },
   segText: { fontFamily: FONT.bold, fontSize: 14, color: COLORS.ink },
   aboutTitle: { fontFamily: FONT.extrabold, fontSize: 18, color: COLORS.ink },
   aboutText: { fontFamily: FONT.medium, fontSize: 14, lineHeight: 20, color: COLORS.ink600, marginTop: 6 },
   version: { fontFamily: FONT.medium, fontSize: 12.5, color: COLORS.ink400, marginTop: 10 },
-});
+}));
