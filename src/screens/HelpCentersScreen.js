@@ -2,6 +2,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Pressable, Linking, ScrollView } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { MapArt } from "../components/Art";
 import * as Location from "expo-location";
 import { COLORS, FONT, RADIUS, SPACING, themed } from "../constants/theme";
 import { HELP_CENTERS } from "../data/helpCenters";
@@ -10,7 +12,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { findHelpCentersLive } from "../services/liveIntel";
 import { openLink } from "../components/LiveCard";
 
-const KIND = (type = "") => resolve(kindOf(type));
+const KIND = (type) => resolve(kindOf(String(type || "")));
 const resolve = (k) => ({ ...k, color: COLORS[k.color], soft: COLORS[k.soft] });
 const kindOf = (type) =>
   /police/i.test(type)
@@ -120,9 +122,12 @@ export default function HelpCentersScreen() {
 
   const Header = (
     <View>
-      <View style={styles.loc}>
+      <LinearGradient colors={["#16C47F", "#0A7A55"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.loc}>
+        <View style={styles.locArt}>
+          <MapArt size={110} />
+        </View>
         <View style={styles.locIcon}>
-          <Feather name="navigation" size={17} color={COLORS.white} />
+          <Feather name="navigation" size={17} color={COLORS.onAccent} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.locLabel}>{t("hcYourArea")}</Text>
@@ -130,13 +135,13 @@ export default function HelpCentersScreen() {
             {locating ? t("hcLocating") : placeLabel || errorMsg || "—"}
           </Text>
         </View>
-        {(locating || liveState === "loading") && <ActivityIndicator color={COLORS.ink} />}
+        {(locating || liveState === "loading") && <ActivityIndicator color={COLORS.onAccent} />}
         {liveState === "error" && (
           <Tap onPress={() => runLive()}>
-            <Feather name="rotate-cw" size={18} color={COLORS.ink} />
+            <Feather name="rotate-cw" size={18} color={COLORS.onAccent} />
           </Tap>
         )}
-      </View>
+      </LinearGradient>
 
       <View style={styles.mapGrid}>
         {MAP_SEARCHES.map((m) => (
@@ -184,7 +189,13 @@ export default function HelpCentersScreen() {
         data={liveState === "loading" && !showLive ? [] : data}
         keyExtractor={(item, i) => item.id || String(i)}
         ListHeaderComponent={Header}
-        ListEmptyComponent={liveState === "loading" ? [0, 1, 2].map((i) => <View key={i} style={styles.skel} />) : null}
+        ListEmptyComponent={liveState === "loading" ? (
+          <View>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.skel} />
+            ))}
+          </View>
+        ) : null}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         renderItem={({ item }) => {
           const k = KIND(item.type);
@@ -210,8 +221,8 @@ export default function HelpCentersScreen() {
               <View style={styles.btnRow}>
                 {!!item.phone && (
                   <Tap style={[styles.btn, styles.btnPrimary]} onPress={() => Linking.openURL(`tel:${item.phone.replace(/[^\d+]/g, "")}`)}>
-                    <Feather name="phone" size={15} color={COLORS.white} />
-                    <Text style={[styles.btnText, { color: COLORS.white }]}>{t("hcCall")}</Text>
+                    <Feather name="phone" size={15} color={COLORS.onAccent} />
+                    <Text style={[styles.btnText, { color: COLORS.onAccent }]}>{t("hcCall")}</Text>
                   </Tap>
                 )}
                 <Tap style={styles.btn} onPress={() => openLink(directions(item))}>
@@ -234,10 +245,11 @@ export default function HelpCentersScreen() {
 
 const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
-  loc: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.surface, borderRadius: 20, padding: 14, marginTop: 8 },
-  locIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
-  locLabel: { fontFamily: FONT.semibold, color: COLORS.ink400, fontSize: 12 },
-  locText: { fontFamily: FONT.bold, color: COLORS.ink, fontSize: 16, marginTop: 1 },
+  loc: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 22, padding: 18, paddingVertical: 22, marginTop: 8, overflow: "hidden" },
+  locArt: { position: "absolute", right: -26, top: -18, opacity: 0.4 },
+  locIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
+  locLabel: { fontFamily: FONT.semibold, color: COLORS.heroSub, fontSize: 12 },
+  locText: { fontFamily: FONT.bold, color: COLORS.onAccent, fontSize: 16, marginTop: 1 },
   mapGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10, marginTop: 14 },
   mapBtn: { width: "48.5%", flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: COLORS.border },
   mapIcon: { width: 36, height: 36, borderRadius: 11, alignItems: "center", justifyContent: "center" },
@@ -250,9 +262,9 @@ const styles = themed(() => StyleSheet.create({
   section: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3 },
   filters: { gap: 8, paddingVertical: 12 },
   filter: { borderRadius: RADIUS.pill, backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 9 },
-  filterOn: { backgroundColor: COLORS.ink },
+  filterOn: { backgroundColor: COLORS.brand },
   filterText: { fontFamily: FONT.semibold, fontSize: 13.5, color: COLORS.ink },
-  filterTextOn: { color: COLORS.white },
+  filterTextOn: { color: COLORS.onAccent },
   skel: { height: 120, borderRadius: 20, backgroundColor: COLORS.surface, marginBottom: 12 },
   card: { borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 16, marginBottom: 12 },
   kIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
@@ -261,6 +273,6 @@ const styles = themed(() => StyleSheet.create({
   address: { fontFamily: FONT.regular, fontSize: 13.5, lineHeight: 19, color: COLORS.ink600, marginTop: 6 },
   btnRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   btn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 40 },
-  btnPrimary: { backgroundColor: COLORS.ink },
+  btnPrimary: { backgroundColor: COLORS.helpTile },
   btnText: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.ink },
 }));

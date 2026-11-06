@@ -39,7 +39,7 @@ export default function PipelineStrip({ stages = {} }) {
           const active = st === "active" || (!st && i === doneCount && activeIdx < 0);
           return (
             <View key={s.key} style={styles.track}>
-              {done && <View style={[styles.fill, { backgroundColor: COLORS.ink }]} />}
+              {done && <View style={[styles.fill, { backgroundColor: COLORS.brand }]} />}
               {active && <Animated.View style={[styles.fill, { backgroundColor: COLORS.gold, opacity: pulse }]} />}
             </View>
           );

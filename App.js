@@ -80,12 +80,12 @@ function LiveTabIcon({ focused }) {
         borderRadius: 27,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: focused ? COLORS.gold : COLORS.ink,
+        backgroundColor: focused ? COLORS.gold : COLORS.brand,
         borderWidth: 4,
         borderColor: COLORS.bg,
       }}
     >
-      <Feather name="mic" size={22} color={COLORS.white} />
+      <Feather name="mic" size={22} color={COLORS.onAccent} />
     </View>
   );
 }
@@ -97,7 +97,7 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: COLORS.ink,
+        tabBarActiveTintColor: COLORS.brand,
         tabBarInactiveTintColor: COLORS.faint,
         tabBarStyle: {
           backgroundColor: COLORS.bg,

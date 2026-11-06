@@ -222,7 +222,7 @@ export default function SahayakLiveScreen({ route }) {
 
               <Tap style={styles.bigMicWrap} onPress={handleMicPress}>
                 <View style={[styles.bigMic, isRecording && { backgroundColor: COLORS.rose }]}>
-                  <Feather name={isRecording ? "square" : "mic"} size={34} color={COLORS.white} />
+                  <Feather name={isRecording ? "square" : "mic"} size={34} color={COLORS.onAccent} />
                 </View>
                 <Text style={styles.bigMicText}>{isRecording ? t("listening") : t("tapToSpeak")}</Text>
               </Tap>
@@ -325,7 +325,7 @@ export default function SahayakLiveScreen({ route }) {
                   {!!result.officialLink && (
                     <Tap style={styles.primary} onPress={() => openLink(result.officialLink)}>
                       <Text style={styles.primaryText}>{t("openOfficial")}</Text>
-                      <Feather name="arrow-up-right" size={18} color={COLORS.white} />
+                      <Feather name="arrow-up-right" size={18} color={COLORS.onAccent} />
                     </Tap>
                   )}
                   <Tap
@@ -351,7 +351,7 @@ export default function SahayakLiveScreen({ route }) {
               )}
               {phase === "done" && (
                 <Tap style={styles.newBtn} onPress={() => setPhase("idle")}>
-                  <Feather name="plus" size={18} color={COLORS.white} />
+                  <Feather name="plus" size={18} color={COLORS.onAccent} />
                   <Text style={styles.newText}>{t("newTask")}</Text>
                 </Tap>
               )}
@@ -374,7 +374,7 @@ const styles = themed(() => StyleSheet.create({
   pad: { paddingHorizontal: 20 },
 
   bigMicWrap: { alignItems: "center", paddingVertical: 28 },
-  bigMic: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  bigMic: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.brand, alignItems: "center", justifyContent: "center", shadowColor: COLORS.brand, shadowOpacity: 0.4, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   bigMicText: { fontFamily: FONT.semibold, fontSize: 15, color: COLORS.ink, marginTop: 14 },
 
   section: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginBottom: 10 },
@@ -398,19 +398,19 @@ const styles = themed(() => StyleSheet.create({
   block: { marginTop: 18 },
   blockTitle: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.ink, marginBottom: 8 },
   item: { flexDirection: "row", gap: 10, marginBottom: 7 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.ink, marginTop: 9 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.brand, marginTop: 9 },
   num: { width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.surface, textAlign: "center", lineHeight: 22, fontFamily: FONT.bold, fontSize: 12, color: COLORS.ink, overflow: "hidden" },
   itemText: { flex: 1, fontFamily: FONT.regular, fontSize: 15, lineHeight: 22, color: COLORS.ink600 },
-  primary: { marginTop: 20, height: 52, borderRadius: RADIUS.pill, backgroundColor: COLORS.ink, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  primaryText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.white },
+  primary: { marginTop: 20, height: 52, borderRadius: RADIUS.pill, backgroundColor: COLORS.brand, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  primaryText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.onAccent },
   secondary: { marginTop: 10, height: 48, borderRadius: RADIUS.pill, backgroundColor: COLORS.surface, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   secondaryText: { fontFamily: FONT.bold, fontSize: 14.5, color: COLORS.ink },
 
   stop: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: SPACING.lg, paddingHorizontal: 22, height: 44, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border },
   stopSquare: { width: 10, height: 10, borderRadius: 2, backgroundColor: COLORS.rose },
   stopText: { fontFamily: FONT.semibold, fontSize: 14, color: COLORS.ink },
-  newBtn: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: SPACING.lg, paddingHorizontal: 24, height: 50, borderRadius: RADIUS.pill, backgroundColor: COLORS.ink },
-  newText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.white },
+  newBtn: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: SPACING.lg, paddingHorizontal: 24, height: 50, borderRadius: RADIUS.pill, backgroundColor: COLORS.brand },
+  newText: { fontFamily: FONT.bold, fontSize: 15, color: COLORS.onAccent },
   errorCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.roseSoft, borderRadius: RADIUS.md, padding: 14, marginTop: SPACING.lg },
   errorText: { flex: 1, fontFamily: FONT.medium, fontSize: 13.5, lineHeight: 19, color: COLORS.ink },
   retry: { fontFamily: FONT.bold, fontSize: 13.5, color: COLORS.rose },

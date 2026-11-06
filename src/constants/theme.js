@@ -1,6 +1,6 @@
 /**
  * Nyaya Setu design system — light & dark.
- * Black + white base (CRED / Linear), one saffron accent, soft grey surfaces (Notion),
+ * Clean base with a bold indigo brand, saffron accent and vivid feature colours,
  * big bold type (Airbnb). In dark mode the base inverts; the "hero" surfaces stay dark.
  *
  * COLORS is one shared object whose values are swapped by applyThemeMode().
@@ -21,7 +21,13 @@ const LIGHT = {
   surface: "#F4F4F2",
   surfaceAlt: "#EDEDEA",
   border: "#EAEAE7",
-  hero: "#0B0B0C",
+  hero: "#3D2BE0",
+  heroSub: "rgba(255,255,255,0.82)",
+  brand: "#4B36F0",
+  brandDeep: "#3D2BE0",
+  brandSoft: "#EEEBFF",
+  scamTile: "#E5383E",
+  helpTile: "#0A9466",
   ink900: "#0B0B0C",
   ink600: "#3A3A40",
   ink400: "#71717A",
@@ -51,7 +57,13 @@ const DARK = {
   surface: "#18181B",
   surfaceAlt: "#27272A",
   border: "#232327",
-  hero: "#1C1C1F",
+  hero: "#3A2BC7",
+  heroSub: "rgba(255,255,255,0.82)",
+  brand: "#6C5CFF",
+  brandDeep: "#4B3CE0",
+  brandSoft: "#1E1A3F",
+  scamTile: "#D63339",
+  helpTile: "#0B8A60",
   ink900: "#F4F4F5",
   ink600: "#C9C9D0",
   ink400: "#8E8E96",

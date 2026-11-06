@@ -12,14 +12,14 @@ export default function ChatBubble({ role, text, loading, accentColor, actions }
         style={[
           styles.bubble,
           isUser
-            ? { backgroundColor: COLORS.ink, borderBottomRightRadius: 6 }
+            ? { backgroundColor: COLORS.brand, borderBottomRightRadius: 6 }
             : { backgroundColor: COLORS.surface, borderBottomLeftRadius: 6 },
         ]}
       >
         {loading ? (
-          <ActivityIndicator color={isUser ? COLORS.white : COLORS.ink} />
+          <ActivityIndicator color={isUser ? COLORS.onAccent : COLORS.ink} />
         ) : (
-          <Text style={[styles.text, { color: isUser ? COLORS.white : COLORS.ink }]}>
+          <Text style={[styles.text, { color: isUser ? COLORS.onAccent : COLORS.ink }]}>
             {isUser ? text : cleanForDisplay(text)}
           </Text>
         )}

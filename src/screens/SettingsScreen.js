@@ -49,8 +49,8 @@ export default function SettingsScreen() {
             const on = mode === m.key;
             return (
               <Pressable key={m.key} style={[styles.seg, styles.segRow, on && styles.segOn]} onPress={() => setMode(m.key)}>
-                <Feather name={m.icon} size={15} color={on ? COLORS.white : COLORS.ink} />
-                <Text style={[styles.segText, on && { color: COLORS.white }]}>{t(m.label)}</Text>
+                <Feather name={m.icon} size={15} color={on ? COLORS.onAccent : COLORS.ink} />
+                <Text style={[styles.segText, on && { color: COLORS.onAccent }]}>{t(m.label)}</Text>
               </Pressable>
             );
           })}
@@ -69,7 +69,7 @@ export default function SettingsScreen() {
                 </View>
                 {on && (
                   <View style={styles.check}>
-                    <Feather name="check" size={14} color={COLORS.white} />
+                    <Feather name="check" size={14} color={COLORS.onAccent} />
                   </View>
                 )}
               </Pressable>
@@ -83,7 +83,7 @@ export default function SettingsScreen() {
             const on = speechRate === r.value;
             return (
               <Pressable key={r.value} style={[styles.seg, on && styles.segOn]} onPress={() => setSpeechRate(r.value)}>
-                <Text style={[styles.segText, on && { color: COLORS.white }]}>{r.label}</Text>
+                <Text style={[styles.segText, on && { color: COLORS.onAccent }]}>{r.label}</Text>
               </Pressable>
             );
           })}
@@ -116,10 +116,10 @@ const styles = themed(() => StyleSheet.create({
   rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
   rowText: { fontFamily: FONT.semibold, fontSize: 15.5, color: COLORS.ink },
   rowSub: { fontFamily: FONT.medium, fontSize: 12.5, color: COLORS.ink400, marginTop: 1 },
-  check: { width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
+  check: { width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.brand, alignItems: "center", justifyContent: "center" },
   segment: { flexDirection: "row", backgroundColor: COLORS.surface, borderRadius: RADIUS.pill, padding: 4 },
   seg: { flex: 1, height: 40, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
-  segOn: { backgroundColor: COLORS.ink },
+  segOn: { backgroundColor: COLORS.brand },
   segRow: { flexDirection: "row", gap: 7 },
   segText: { fontFamily: FONT.bold, fontSize: 14, color: COLORS.ink },
   aboutTitle: { fontFamily: FONT.extrabold, fontSize: 18, color: COLORS.ink },

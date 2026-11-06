@@ -11,6 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FlatList, StyleSheet, Alert, View, Text, TouchableOpacity, ScrollView, Linking } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { ShieldArt } from "../components/Art";
 import ChatItem from "../components/ChatItem";
 import ChatInput from "../components/ChatInput";
 import KeyboardAware from "../components/KeyboardAware";
@@ -169,20 +171,23 @@ export default function ScamShieldScreen() {
 
   const Header = (
     <View>
-      <View style={styles.hero}>
+      <LinearGradient colors={["#FF4F55", "#C9183F"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+        <View style={styles.heroArt}>
+          <ShieldArt size={120} />
+        </View>
         <Text style={styles.heroTitle}>{t("scamHeroTitle")}</Text>
         <Text style={styles.heroSub}>{t("scamHeroSub")}</Text>
         <View style={styles.heroBtns}>
           <TouchableOpacity style={styles.heroBtn} onPress={() => Linking.openURL("tel:1930")}>
-            <Feather name="phone" size={15} color={COLORS.onAccent} />
+            <Feather name="phone" size={15} color="#C9183F" />
             <Text style={styles.heroBtnText}>Call 1930</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.heroBtn, styles.heroBtnGhost]} onPress={() => openLink("https://cybercrime.gov.in")}>
-            <Feather name="globe" size={15} color={COLORS.ink} />
-            <Text style={[styles.heroBtnText, { color: COLORS.ink }]}>Report online</Text>
+            <Feather name="globe" size={15} color={COLORS.onAccent} />
+            <Text style={[styles.heroBtnText, { color: COLORS.onAccent }]}>Report online</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
       {messages.length === 0 && (
         <View style={{ paddingHorizontal: 20 }}>
           <Text style={styles.sectionTitle}>{t("scamSamples")}</Text>
@@ -216,7 +221,7 @@ export default function ScamShieldScreen() {
           ListFooterComponent={
             messages.length > 0 && !busy ? (
               <TouchableOpacity onPress={clearAll} style={styles.clear}>
-                <Feather name="plus" size={17} color={COLORS.white} />
+                <Feather name="plus" size={17} color={COLORS.onAccent} />
                 <Text style={styles.clearText}>{t("scamAnother")}</Text>
               </TouchableOpacity>
             ) : null
@@ -242,13 +247,14 @@ export default function ScamShieldScreen() {
 
 const styles = themed(() => StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
-  hero: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
-  heroTitle: { fontFamily: FONT.extrabold, color: COLORS.ink, fontSize: 28, letterSpacing: -0.6 },
-  heroSub: { fontFamily: FONT.regular, color: COLORS.ink400, fontSize: 15, lineHeight: 21, marginTop: 4 },
+  hero: { marginHorizontal: 20, marginTop: 8, marginBottom: 20, padding: 20, borderRadius: RADIUS.lg, overflow: "hidden" },
+  heroArt: { position: "absolute", right: 2, top: 4 },
+  heroTitle: { fontFamily: FONT.extrabold, color: COLORS.onAccent, fontSize: 28, letterSpacing: -0.6 },
+  heroSub: { width: "68%", fontFamily: FONT.medium, color: COLORS.heroSub, fontSize: 15, lineHeight: 21, marginTop: 4 },
   heroBtns: { flexDirection: "row", gap: 8, marginTop: 16 },
-  heroBtn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: COLORS.rose, borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 42 },
-  heroBtnGhost: { backgroundColor: COLORS.surface },
-  heroBtnText: { fontFamily: FONT.bold, color: COLORS.onAccent, fontSize: 14 },
+  heroBtn: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: "#FFFFFF", borderRadius: RADIUS.pill, paddingHorizontal: 16, height: 42 },
+  heroBtnGhost: { backgroundColor: "rgba(255,255,255,0.18)" },
+  heroBtnText: { fontFamily: FONT.bold, color: "#C9183F", fontSize: 14 },
   sectionTitle: { fontFamily: FONT.bold, fontSize: 18, color: COLORS.ink, letterSpacing: -0.3, marginBottom: 10 },
   list: { borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
   sample: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
@@ -260,6 +266,6 @@ const styles = themed(() => StyleSheet.create({
   flagHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
   flagTitle: { fontFamily: FONT.bold, color: COLORS.amber, fontSize: 15 },
   flagItem: { fontFamily: FONT.regular, fontSize: 14, color: COLORS.ink600, lineHeight: 21, marginTop: 2 },
-  clear: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, backgroundColor: COLORS.ink, borderRadius: RADIUS.pill, paddingHorizontal: 22, height: 48 },
-  clearText: { fontFamily: FONT.bold, color: COLORS.white, fontSize: 14.5 },
+  clear: { alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, backgroundColor: COLORS.brand, borderRadius: RADIUS.pill, paddingHorizontal: 22, height: 48 },
+  clearText: { fontFamily: FONT.bold, color: COLORS.onAccent, fontSize: 14.5 },
 }));

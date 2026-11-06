@@ -26,7 +26,7 @@ const styles = themed(() => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.ink,
+    backgroundColor: COLORS.brand,
     borderRadius: RADIUS.pill,
     paddingHorizontal: 18,
     paddingVertical: 9,
@@ -37,5 +37,5 @@ const styles = themed(() => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   square: { width: 11, height: 11, borderRadius: 2, backgroundColor: "#E5484D" },
-  text: { fontFamily: FONT.extrabold, color: COLORS.white, fontSize: 13.5 },
+  text: { fontFamily: FONT.extrabold, color: COLORS.onAccent, fontSize: 13.5 },
 }));

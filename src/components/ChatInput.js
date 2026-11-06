@@ -51,7 +51,7 @@ export default function ChatInput({ onSend, onMicPress, onImagePress, onAttach, 
         )}
       </View>
       <Pressable style={[styles.sendBtn, !canSend && { backgroundColor: COLORS.surfaceAlt }]} onPress={handleSend} accessibilityLabel="Send">
-        <Feather name="arrow-up" size={21} color={canSend ? COLORS.white : COLORS.faint} />
+        <Feather name="arrow-up" size={21} color={canSend ? COLORS.onAccent : COLORS.faint} />
       </Pressable>
       {onAttach && <AttachSheet visible={sheet} onClose={() => setSheet(false)} onPick={onAttach} title={attachTitle} />}
     </View>
@@ -64,5 +64,5 @@ const styles = themed(() => StyleSheet.create({
   input: { flex: 1, maxHeight: 120, fontFamily: FONT.medium, fontSize: 15.5, color: COLORS.ink, paddingHorizontal: 6, paddingTop: 13, paddingBottom: 13 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   recording: { backgroundColor: COLORS.rose },
-  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
+  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.brand, alignItems: "center", justifyContent: "center" },
 }));
